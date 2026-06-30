@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter);
+  background: #050505;
+  color: #ffffff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #FF6B35;
+  color: white;
+}
+
+/* Smooth scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF6B35;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFB627;
+}
+
+/* Premium glass effect utility */
+.glass {
+  background: rgba(18, 18, 18, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Premium button styles */
+.btn-primary {
+  @apply px-8 py-4 bg-accent-orange text-white font-medium rounded-full 
+         hover:bg-accent-amber transition-all duration-300 
+         hover:scale-105 active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-8 py-4 glass text-white font-medium rounded-full 
+         hover:border-accent-orange transition-all duration-300 
+         hover:scale-105 active:scale-95;
+}
+
+/* Container utility */
+.container-custom {
+  @apply max-w-container mx-auto px-6 lg:px-8;
+}
+
+/* Section spacing */
+.section {
+  @apply py-section;
+}
+
+/* Premium heading styles */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  @apply text-5xl md:text-6xl lg:text-8xl;
+}
+
+h2 {
+  @apply text-4xl md:text-5xl lg:text-7xl;
+}
+
+h3 {
+  @apply text-2xl md:text-3xl lg:text-5xl;
+}
+
+h4 {
+  @apply text-xl md:text-2xl lg:text-3xl;
+}
+
+/* Premium text styles */
+.text-premium {
+  @apply text-base md:text-lg lg:text-xl text-gray-400 leading-relaxed;
+}
