@@ -1,110 +1,199 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { FiZap, FiActivity, FiHeart, FiShield } from "react-icons/fi";
+import { useRef, useState, useEffect } from "react";
+import { motion, useInView } from "framer-motion";
+import { BURGER_CONFIG } from "@/config/BurgerConfig";
 
-export default function Nutrition() {
-  const nutritionData = [
-    {
-      icon: FiZap,
-      label: "Energy",
-      value: "650",
-      unit: "kcal",
-      description: "Premium fuel for your day",
-    },
-    {
-      icon: FiActivity,
-      label: "Protein",
-      value: "42",
-      unit: "g",
-      description: "High-quality grass-fed beef",
-    },
-    {
-      icon: FiHeart,
-      label: "Quality",
-      value: "100",
-      unit: "%",
-      description: "Fresh, natural ingredients",
-    },
-    {
-      icon: FiShield,
-      label: "Crafted",
-      value: "2024",
-      unit: "",
-      description: "Perfected recipe",
-    },
-  ];
+// ── Animated counter ─────────────────────────────────────────────
+function Counter({ to, duration = 2 }: { to: number; duration?: number }) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const start = performance.now();
+    const raf = (now: number) => {
+      const t = Math.min((now - start) / (duration * 1000), 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(ease * to));
+      if (t < 1) requestAnimationFrame(raf);
+    };
+    requestAnimationFrame(raf);
+  }, [inView, to, duration]);
+
+  return <span ref={ref}>{val}</span>;
+}
+
+// ── Circular ring stat ───────────────────────────────────────────
+function RingStat({ label, value, unit, max, color }: {
+  label: string; value: number; unit: string; max: number; color: string;
+}) {
+  const ref = useRef<SVGCircleElement>(null);
+  const inView = useInView(ref as any, { once: true });
+  const r = 44;
+  const circ = 2 * Math.PI * r;
+  const pct = value / max;
 
   return (
-    <section id="nutrition" className="section relative bg-dark-900">
-      <div className="container-custom">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-20"
-        >
-          <span className="inline-block px-4 py-2 glass rounded-full text-sm font-medium text-accent-orange mb-6">
-            Nutritional Excellence
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative w-28 h-28">
+        <svg width="112" height="112" viewBox="0 0 112 112" className="rotate-[-90deg]">
+          <circle cx="56" cy="56" r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="2.5" />
+          <motion.circle
+            ref={ref}
+            cx="56" cy="56" r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray={circ}
+            initial={{ strokeDashoffset: circ }}
+            animate={inView ? { strokeDashoffset: circ * (1 - pct) } : {}}
+            transition={{ duration: 2, ease: [0.23, 1, 0.32, 1], delay: 0.3 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-light leading-none tracking-tight">
+            <Counter to={value} />
           </span>
-          <h2 className="mb-6">
-            Designed For
-            <br />
-            <span className="text-accent-orange">Performance</span>
-          </h2>
-          <p className="text-premium max-w-2xl mx-auto">
-            Every bite delivers balanced nutrition without compromise.
-            Premium ingredients, optimal ratios.
-          </p>
-        </motion.div>
-
-        {/* Nutrition Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {nutritionData.map((item, index) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
-              whileHover={{ y: -8 }}
-              className="glass rounded-2xl p-8 text-center group hover:border-accent-orange transition-all duration-300"
-            >
-              {/* Icon */}
-              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-accent-orange/10 flex items-center justify-center group-hover:bg-accent-orange/20 transition-colors">
-                <item.icon className="w-8 h-8 text-accent-orange" />
-              </div>
-
-              {/* Value */}
-              <div className="mb-2">
-                <span className="text-5xl font-bold">{item.value}</span>
-                <span className="text-2xl text-accent-orange ml-1">{item.unit}</span>
-              </div>
-
-              {/* Label */}
-              <h4 className="text-lg font-semibold mb-2">{item.label}</h4>
-              <p className="text-sm text-gray-400">{item.description}</p>
-            </motion.div>
-          ))}
+          <span className="text-xs text-white/30 mt-0.5">{unit}</span>
         </div>
+      </div>
+      <span className="text-label">{label}</span>
+    </div>
+  );
+}
 
-        {/* Additional Info */}
+// ── Assembly steps ────────────────────────────────────────────────
+const STEPS = Object.values(BURGER_CONFIG).reverse().map((cfg, i) => ({
+  n: i + 1,
+  name: cfg.displayName,
+  color: cfg.color,
+}));
+
+export default function Nutrition() {
+  return (
+    <section id="nutrition" className="relative section-padding" style={{ background: "var(--dark-900)" }}>
+
+      {/* ── Section header — centered ─────────────────────────── */}
+      <div className="container-custom mb-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="mt-16 glass rounded-2xl p-8 text-center"
+          transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
         >
-          <p className="text-sm text-gray-400 leading-relaxed max-w-3xl mx-auto">
-            <span className="text-white font-medium">Allergen Information:</span> Contains
-            gluten, dairy, and soy. Prepared in a kitchen that handles nuts. All ingredients
-            are carefully sourced from verified suppliers meeting our premium standards.
-          </p>
+          <p className="text-label mb-6">— Nutrition & Craft</p>
+          <h2 className="font-light leading-none"
+            style={{ fontSize: "clamp(2.5rem, 5vw, 5.5rem)", letterSpacing: "-0.03em" }}>
+            Engineered for
+            <br />
+            <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
+              excellence.
+            </em>
+          </h2>
         </motion.div>
       </div>
+
+      {/* ── Big stats row — full width, evenly spaced ─────────── */}
+      <div className="border-y border-white/[0.04] py-14 mb-20">
+        <div className="container-custom">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-white/[0.04]">
+            {[
+              { val: 650, unit: "kcal", label: "Calories",  color: "var(--orange)" },
+              { val: 42,  unit: "g",    label: "Protein",   color: "var(--amber)"  },
+              { val: 100, unit: "%",    label: "Natural",   color: "#90EE90"       },
+              { val: 8,   unit: "layers",label: "Crafted",  color: "#87CEEB"       },
+            ].map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+                className="flex flex-col items-center py-6"
+              >
+                <div className="font-light tracking-tighter leading-none mb-2"
+                  style={{ fontSize: "clamp(2.5rem, 4vw, 4.5rem)" }}>
+                  <Counter to={s.val} />
+                  <span className="text-xl ml-1" style={{ color: s.color, opacity: 0.7 }}>{s.unit}</span>
+                </div>
+                <div className="text-label">{s.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Two columns: ring charts | assembly ─────────────────── */}
+      <div className="container-custom">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+
+          {/* Left — ring charts 2×2 */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <p className="text-label mb-10">Nutritional Profile</p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-12">
+              <RingStat label="Calories"  value={650} unit="kcal" max={1000} color="var(--orange)" />
+              <RingStat label="Protein"   value={42}  unit="g"    max={60}   color="var(--amber)"  />
+              <RingStat label="Freshness" value={100} unit="%"    max={100}  color="#90EE90"        />
+              <RingStat label="Quality"   value={100} unit="%"    max={100}  color="#87CEEB"        />
+            </div>
+          </motion.div>
+
+          {/* Right — assembly list */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+          >
+            <p className="text-label mb-10">Assembly Order</p>
+            <div className="flex flex-col gap-0">
+              {STEPS.map((step, i) => (
+                <motion.div
+                  key={step.name}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                  className="flex items-center gap-5 py-4 border-b border-white/[0.04] last:border-0 group"
+                >
+                  {/* Step number circle */}
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-all duration-300 group-hover:scale-110"
+                    style={{
+                      background: `${step.color}12`,
+                      border: `1px solid ${step.color}25`,
+                      color: step.color,
+                    }}
+                  >
+                    {step.n}
+                  </div>
+
+                  {/* Name */}
+                  <span className="text-sm text-white/60 group-hover:text-white/90 transition-colors duration-300 flex-1">
+                    {step.name}
+                  </span>
+
+                  {/* Color accent bar */}
+                  <div
+                    className="w-6 h-px shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ background: step.color }}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+
     </section>
   );
 }

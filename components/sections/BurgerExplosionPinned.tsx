@@ -1,141 +1,120 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BurgerExplosionPinnedProps {
   onProgressUpdate: (progress: number) => void;
 }
 
+const STORY_BEATS = [
+  { threshold: 0,   headline: "Watch it unfold.",   sub: "Eight layers. One vision." },
+  { threshold: 0.25, headline: "Crafted with care.", sub: "Every ingredient sourced with intention." },
+  { threshold: 0.55, headline: "Precision stacking.", sub: "The architecture of flavour." },
+  { threshold: 0.8,  headline: "The perfect bite.",  sub: "Ready to be experienced." },
+];
+
 export default function BurgerExplosionPinned({ onProgressUpdate }: BurgerExplosionPinnedProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isAnimationComplete, setIsAnimationComplete] = useState(false);
+  const [beatIndex, setBeatIndex] = useState(0);
 
   useEffect(() => {
     let ticking = false;
-
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const windowHeight = window.innerHeight;
-          
-          // Animation happens during first 3 viewport heights after hero
-          const explosionStart = windowHeight; // After hero section
-          const explosionDuration = windowHeight * 3; // 3 viewport heights for animation
-          const explosionEnd = explosionStart + explosionDuration;
-          
-          if (scrollY < explosionStart) {
-            // Before explosion - burger assembled
-            setScrollProgress(0);
-            onProgressUpdate(0);
-            setIsAnimationComplete(false);
-          } else if (scrollY >= explosionEnd) {
-            // After explosion - burger fully exploded, allow normal scroll
-            setScrollProgress(1);
-            onProgressUpdate(1);
-            setIsAnimationComplete(true);
-          } else {
-            // During explosion - calculate progress
-            const progress = (scrollY - explosionStart) / explosionDuration;
-            const smoothProgress = Math.min(Math.max(progress, 0), 1);
-            setScrollProgress(smoothProgress);
-            onProgressUpdate(smoothProgress);
-            setIsAnimationComplete(false);
-          }
-          
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const scrollY      = window.scrollY;
+        const wh           = window.innerHeight;
+        const start        = wh;
+        const duration     = wh * 3;
+        const end          = start + duration;
 
+        if (scrollY < start) {
+          setScrollProgress(0);
+          onProgressUpdate(0);
+        } else if (scrollY >= end) {
+          setScrollProgress(1);
+          onProgressUpdate(1);
+        } else {
+          const p = Math.min(Math.max((scrollY - start) / duration, 0), 1);
+          setScrollProgress(p);
+          onProgressUpdate(p);
+          // update story beat
+          let bi = 0;
+          for (let i = STORY_BEATS.length - 1; i >= 0; i--) {
+            if (p >= STORY_BEATS[i].threshold) { bi = i; break; }
+          }
+          setBeatIndex(bi);
+        }
+        ticking = false;
+      });
+    };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onProgressUpdate]);
 
+  const beat = STORY_BEATS[beatIndex];
+
   return (
-    <>
-      {/* Explosion Zone - takes 4x viewport height */}
-      <section 
-        className="relative bg-dark-900"
-        style={{ height: '400vh' }} // 4x viewport for smooth animation
-      >
-        {/* Fixed content during explosion - show only when scrolling into explosion zone */}
-        <div 
-          className="fixed top-0 left-0 w-full h-screen z-20 bg-dark-900"
-          style={{ display: (scrollProgress > 0 && scrollProgress < 1) ? 'block' : 'none' }}
-        >
-          {/* Background glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-orange/5 rounded-full blur-[150px] pointer-events-none" />
+    <section className="relative bg-dark-900" style={{ height: "400vh" }}>
 
-          {/* Center text - changes during explosion */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center">
-              {scrollProgress < 0.3 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <h2 className="text-5xl md:text-7xl font-bold mb-4">
-                    Watch It <span className="text-accent-orange">Unfold</span>
-                  </h2>
-                  <p className="text-xl md:text-2xl text-gray-400">
-                    Every layer tells a story
-                  </p>
-                </motion.div>
-              )}
-              
-              {scrollProgress >= 0.3 && scrollProgress < 0.7 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <h2 className="text-5xl md:text-7xl font-bold mb-4">
-                    <span className="text-accent-orange">Crafted</span> With Care
-                  </h2>
-                  <p className="text-xl md:text-2xl text-gray-400">
-                    Premium ingredients revealed
-                  </p>
-                </motion.div>
-              )}
+      {/* Fixed overlay — only during explosion */}
+      <AnimatePresence>
+        {scrollProgress > 0 && scrollProgress < 1 && (
+          <motion.div
+            key="explosion-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-20"
+            style={{ background: "var(--dark-900)" }}
+          >
+            {/* Glow behind burger */}
+            <div
+              className="absolute top-1/2 right-1/3 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 70%)" }}
+            />
 
-              {scrollProgress >= 0.7 && (
+            {/* Story text — left aligned, editorial */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full max-w-sm px-10 lg:px-16 z-10">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  key={beatIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                 >
-                  <h2 className="text-5xl md:text-7xl font-bold mb-4">
-                    <span className="text-accent-orange">Experience</span> Perfection
+                  <p className="text-label mb-4">— Layer by layer</p>
+                  <h2 className="text-section font-light leading-none mb-4">
+                    {beat.headline}
                   </h2>
-                  <p className="text-xl md:text-2xl text-gray-400">
-                    The art of burger mastery
-                  </p>
+                  <p className="text-body">{beat.sub}</p>
                 </motion.div>
-              )}
+              </AnimatePresence>
             </div>
-          </div>
 
-          {/* Progress indicator */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2">
-            <div className="w-48 h-1 bg-dark-700 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-accent-orange to-accent-amber"
-                style={{ width: `${scrollProgress * 100}%` }}
-                transition={{ duration: 0.1 }}
-              />
+            {/* Progress line — bottom */}
+            <div className="absolute bottom-10 left-10 right-10 flex items-center gap-4">
+              <div className="flex-1 h-px bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${scrollProgress * 100}%`,
+                    background: "linear-gradient(to right, var(--orange), var(--amber))",
+                  }}
+                />
+              </div>
+              <span className="text-label shrink-0">
+                {Math.round(scrollProgress * 100)}%
+              </span>
             </div>
-            <p className="text-xs text-gray-500 text-center mt-3 uppercase tracking-wider">
-              {scrollProgress < 1 ? 'Keep scrolling to explore' : 'Animation complete'}
-            </p>
-          </div>
-        </div>
-      </section>
-    </>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }

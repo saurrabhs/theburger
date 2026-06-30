@@ -1,134 +1,102 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Suspense, useState } from "react";
+import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { CAMERA_CONFIG } from "@/config/BurgerConfig";
 import Burger from "@/components/burger/Burger";
 import Lighting from "@/components/burger/Lighting";
-import { FiRotateCw, FiMaximize2 } from "react-icons/fi";
 
 export default function Viewer360() {
   const [autoRotate, setAutoRotate] = useState(false);
 
   return (
-    <section id="experience" className="section relative bg-dark-900">
+    <section id="experience-360" className="relative section-padding bg-dark-900">
       <div className="container-custom">
-        {/* Section Header */}
+
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
+          transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
+          className="mb-16"
         >
-          <span className="inline-block px-4 py-2 glass rounded-full text-sm font-medium text-accent-orange mb-6">
-            Interactive Experience
-          </span>
-          <h2 className="mb-6">
-            Explore Every
+          <p className="text-label mb-6">— 360° Viewer</p>
+          <h2 className="text-section font-light leading-none">
+            Every angle.
             <br />
-            <span className="text-accent-orange">Angle</span>
+            <em style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", color: "var(--orange)" }}>
+              Every detail.
+            </em>
           </h2>
-          <p className="text-premium max-w-2xl mx-auto">
-            Drag to rotate. Scroll to zoom. Experience the burger in full 360°.
-          </p>
         </motion.div>
 
-        {/* 360 Viewer */}
+        {/* Canvas */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="relative w-full h-[600px] rounded-3xl overflow-hidden glass"
+          transition={{ duration: 1, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+          className="relative w-full rounded-3xl overflow-hidden"
+          style={{
+            height: "65vh",
+            minHeight: 400,
+            background: "var(--dark-800)",
+            border: "1px solid rgba(255,255,255,0.04)",
+          }}
         >
-          <Canvas
-            shadows
-            gl={{ antialias: true, alpha: true }}
-            dpr={[1, 2]}
-          >
-            <PerspectiveCamera
-              makeDefault
-              position={[
-                CAMERA_CONFIG.position.x,
-                CAMERA_CONFIG.position.y,
-                CAMERA_CONFIG.position.z,
-              ]}
-              fov={CAMERA_CONFIG.fov}
+          {/* Subtle glow inside canvas */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,53,0.05) 0%, transparent 70%)" }} />
+
+          <Canvas shadows gl={{ antialias: true, alpha: true }} dpr={[1, 2]}>
+            <PerspectiveCamera makeDefault
+              position={[CAMERA_CONFIG.position.x, CAMERA_CONFIG.position.y, CAMERA_CONFIG.position.z]}
+              fov={CAMERA_CONFIG.fov} near={CAMERA_CONFIG.near} far={CAMERA_CONFIG.far}
             />
-
             <Lighting />
-
             <Suspense fallback={null}>
               <Burger />
             </Suspense>
-
             <OrbitControls
-              enableZoom={true}
-              enablePan={false}
-              enableRotate={true}
-              minDistance={4}
-              maxDistance={12}
-              autoRotate={autoRotate}
-              autoRotateSpeed={1}
+              enableZoom minDistance={4} maxDistance={12}
+              enablePan={false} enableRotate
+              autoRotate={autoRotate} autoRotateSpeed={0.8}
             />
           </Canvas>
 
-          {/* Controls */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setAutoRotate(!autoRotate)}
-              className={`glass px-6 py-3 rounded-full flex items-center gap-2 transition-colors ${
-                autoRotate ? "border-accent-orange" : ""
-              }`}
-            >
-              <FiRotateCw className={`w-5 h-5 ${autoRotate ? "animate-spin" : ""}`} style={{ animationDuration: "3s" }} />
-              <span className="text-sm font-medium">
-                {autoRotate ? "Auto-Rotating" : "Manual Control"}
-              </span>
-            </motion.button>
+          {/* Bottom controls overlay */}
+          <div className="absolute bottom-0 inset-x-0 px-8 py-6 flex items-center justify-between"
+            style={{ background: "linear-gradient(to top, rgba(8,8,8,0.8), transparent)" }}>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="glass px-6 py-3 rounded-full flex items-center gap-2"
-            >
-              <FiMaximize2 className="w-5 h-5" />
-              <span className="text-sm font-medium">Fullscreen</span>
-            </motion.button>
-          </div>
-
-          {/* Instructions */}
-          <div className="absolute top-6 left-6 glass px-4 py-2 rounded-full">
-            <p className="text-xs text-gray-400">
-              <span className="text-white font-medium">Drag</span> to rotate •{" "}
-              <span className="text-white font-medium">Scroll</span> to zoom
+            <p className="text-label">
+              <span className="text-white/60">Drag</span> to rotate ·{" "}
+              <span className="text-white/60">Scroll</span> to zoom
             </p>
+
+            <button
+              onClick={() => setAutoRotate(!autoRotate)}
+              className={`btn-ghost py-2 px-4 text-xs flex items-center gap-2 ${autoRotate ? "border-orange-500/40" : ""}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${autoRotate ? "bg-orange-400" : "bg-white/20"}`}
+                style={autoRotate ? { boxShadow: "0 0 6px var(--orange)" } : {}}
+              />
+              {autoRotate ? "Auto-rotating" : "Auto-rotate"}
+            </button>
           </div>
         </motion.div>
 
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          {[
-            { label: "360° View", description: "Full orbital rotation" },
-            { label: "Zoom Control", description: "Get up close and personal" },
-            { label: "Auto-Rotate", description: "Sit back and watch" },
-          ].map((feature, index) => (
-            <motion.div
-              key={feature.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 + 0.3, duration: 0.6 }}
-              className="glass rounded-xl p-6 text-center"
-            >
-              <h4 className="font-semibold mb-1">{feature.label}</h4>
-              <p className="text-sm text-gray-400">{feature.description}</p>
-            </motion.div>
+        {/* Feature pills */}
+        <div className="flex flex-wrap gap-3 mt-6 justify-center">
+          {["360° Orbital Rotation", "Zoom Control", "Cinematic Lighting", "Interactive"].map((f) => (
+            <span key={f}
+              className="text-label px-4 py-2 rounded-full"
+              style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+              {f}
+            </span>
           ))}
         </div>
       </div>

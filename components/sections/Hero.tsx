@@ -1,80 +1,123 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FiArrowRight, FiPlay } from "react-icons/fi";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.15, duration: 1, ease: [0.23, 1, 0.32, 1] },
+  }),
+};
 
 export default function Hero() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.3 } },
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
-  };
-
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900">
+    <section
+      id="hero"
+      className="relative h-screen w-full overflow-hidden"
+      style={{ background: "var(--dark-900)" }}
+    >
+      {/* Radial glows */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,107,53,0.07) 0%, transparent 65%)" }} />
+      </div>
 
-      {/* Background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent-orange/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* Three-column layout: left text | burger center | right text */}
+      <div className="absolute inset-0 z-40 pointer-events-none grid grid-cols-[1fr_auto_1fr] lg:grid-cols-[1fr_460px_1fr] gap-0 items-center px-8 lg:px-16 pt-20">
 
-      {/* Text content — sits above the fixed 3D scene (z-30) from BurgerExperienceWrapper */}
-      <div className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="text-center max-w-5xl px-6"
-        >
-          <motion.div variants={itemVariants} className="mb-6">
-            <span className="inline-block px-4 py-2 glass rounded-full text-sm font-medium text-accent-orange">
-              Introducing
-            </span>
-          </motion.div>
+        {/* LEFT column */}
+        <div className="flex flex-col justify-center items-start gap-6 pr-8 lg:pr-12">
+          <motion.p variants={fadeUp} initial="hidden" animate="visible" custom={0} className="text-label">
+            — Craft Burger Experience
+          </motion.p>
 
-          <motion.h1 variants={itemVariants} className="mb-6 font-bold tracking-tighter">
-            The Art of
+          <motion.h1
+            variants={fadeUp} initial="hidden" animate="visible" custom={1}
+            className="text-hero font-light leading-none"
+          >
+            The Art
             <br />
-            <span className="text-accent-orange">Burger Perfection</span>
+            <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
+              of Craft
+            </em>
+            <br />
+            Perfection
           </motion.h1>
 
-          <motion.p variants={itemVariants} className="text-premium max-w-2xl mx-auto mb-12">
-            Eight meticulously crafted layers. One unforgettable experience.
-            Discover the precision, passion, and perfection in every bite.
+          <motion.p
+            variants={fadeUp} initial="hidden" animate="visible" custom={2}
+            className="text-body max-w-xs"
+          >
+            Eight meticulously sourced ingredients. One unforgettable composition.
           </motion.p>
 
           <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pointer-events-auto"
+            variants={fadeUp} initial="hidden" animate="visible" custom={3}
+            className="flex flex-wrap gap-3 pointer-events-auto"
           >
-            <button className="btn-primary flex items-center gap-2 group">
-              Experience Now
-              <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="btn-secondary flex items-center gap-2 group">
-              <FiPlay className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Story
-            </button>
+            <a href="#ingredients" className="btn-primary">
+              Discover the Craft
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </a>
+            <a href="#experience-360" className="btn-ghost">360° View</a>
           </motion.div>
-        </motion.div>
+        </div>
 
-        {/* Scroll hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        >
-          <span className="text-xs text-gray-500 uppercase tracking-wider">Scroll to explore</span>
+        {/* CENTER column — empty space for the fixed 3D burger (rendered behind at z-30) */}
+        <div className="h-full" />
+
+        {/* RIGHT column */}
+        <div className="flex flex-col justify-center items-end gap-8 pl-8 lg:pl-12 text-right">
+
+          {/* Stats */}
+          {[
+            { val: "8",    label: "Premium layers" },
+            { val: "100%", label: "Natural ingredients" },
+            { val: "1",    label: "Perfect bite" },
+          ].map((s, i) => (
+            <motion.div
+              key={s.label}
+              variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}
+            >
+              <div className="text-3xl font-light tracking-tighter mb-1">{s.val}</div>
+              <div className="text-label">{s.label}</div>
+            </motion.div>
+          ))}
+
+          {/* Divider */}
           <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-[1px] h-12 bg-gradient-to-b from-accent-orange to-transparent"
+            variants={fadeUp} initial="hidden" animate="visible" custom={4}
+            className="w-px h-16 self-end"
+            style={{ background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.08), transparent)" }}
           />
-        </motion.div>
+
+          {/* Quality badge */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={5}
+            className="text-right"
+          >
+            <p className="text-label mb-1">Crafted since</p>
+            <p className="text-2xl font-light tracking-tight">2024</p>
+          </motion.div>
+        </div>
       </div>
 
+      {/* Scroll cue */}
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2, duration: 1 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-3 pointer-events-none"
+      >
+        <span className="text-label">Scroll to explore</span>
+        <motion.div
+          animate={{ scaleY: [1, 1.6, 1], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-px h-10 origin-top"
+          style={{ background: "linear-gradient(to bottom, var(--orange), transparent)" }}
+        />
+      </motion.div>
     </section>
   );
 }

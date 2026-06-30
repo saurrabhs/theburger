@@ -1,127 +1,120 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { FiInstagram, FiTwitter, FiFacebook, FiLinkedin } from "react-icons/fi";
+
+const LINKS = [
+  { label: "Story",       href: "#story" },
+  { label: "Ingredients", href: "#ingredients" },
+  { label: "Nutrition",   href: "#nutrition" },
+  { label: "Experience",  href: "#experience" },
+];
+
+const SOCIALS = [
+  { name: "Instagram", href: "#", icon: "IG" },
+  { name: "Twitter",   href: "#", icon: "TW" },
+  { name: "TikTok",    href: "#", icon: "TK" },
+];
 
 export default function Footer() {
-  const footerLinks = [
-    {
-      title: "Product",
-      links: ["Story", "Ingredients", "Nutrition", "Experience"],
-    },
-    {
-      title: "Company",
-      links: ["About", "Careers", "Press", "Contact"],
-    },
-    {
-      title: "Legal",
-      links: ["Privacy", "Terms", "Cookies", "Licenses"],
-    },
-  ];
+  const [email, setEmail] = useState("");
+  const [sent, setSent]   = useState(false);
 
-  const socialLinks = [
-    { icon: FiInstagram, href: "#", label: "Instagram" },
-    { icon: FiTwitter, href: "#", label: "Twitter" },
-    { icon: FiFacebook, href: "#", label: "Facebook" },
-    { icon: FiLinkedin, href: "#", label: "LinkedIn" },
-  ];
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSent(true);
+  };
 
   return (
-    <footer className="relative bg-dark-900 border-t border-white/5">
-      <div className="container-custom py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-12">
-          {/* Brand Section */}
-          <div className="lg:col-span-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h3 className="text-2xl font-bold mb-4">
-                THE <span className="text-accent-orange">BURGER</span>
-              </h3>
-              <p className="text-gray-400 max-w-sm mb-6">
-                Crafting the finest burger experience through precision,
-                passion, and perfect ingredients.
-              </p>
+    <footer className="relative bg-dark-900 border-t border-white/[0.04] section-padding">
 
-              {/* Social Links */}
-              <div className="flex items-center gap-4">
-                {socialLinks.map((social, index) => (
-                  <motion.a
-                    key={social.label}
-                    href={social.href}
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.4 }}
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    className="w-10 h-10 glass rounded-full flex items-center justify-center text-gray-400 hover:text-accent-orange hover:border-accent-orange transition-all"
-                    aria-label={social.label}
-                  >
-                    <social.icon className="w-5 h-5" />
-                  </motion.a>
-                ))}
-              </div>
-            </motion.div>
+      {/* Top row */}
+      <div className="container-custom">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 mb-20">
+
+          {/* Brand */}
+          <div>
+            <p className="text-label mb-4">The Burger</p>
+            <h3 className="text-section font-light leading-none mb-6">
+              Craft.
+              <br />
+              <em style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", color: "var(--orange)" }}>
+                Perfection.
+              </em>
+            </h3>
+            <p className="text-body max-w-xs">
+              A premium burger experience designed for those who believe the finest things deserve time, craft, and intention.
+            </p>
           </div>
 
-          {/* Links Sections */}
-          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-3 gap-8">
-            {footerLinks.map((section, sectionIndex) => (
-              <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: sectionIndex * 0.1 + 0.2, duration: 0.6 }}
-              >
-                <h4 className="text-sm font-semibold uppercase tracking-wider mb-4">
-                  {section.title}
-                </h4>
-                <ul className="space-y-3">
-                  {section.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-gray-400 hover:text-white transition-colors text-sm"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
+          {/* Navigation */}
+          <div className="flex flex-col gap-4">
+            <p className="text-label mb-2">Navigation</p>
+            {LINKS.map((l) => (
+              <a key={l.label} href={l.href}
+                className="text-sm text-white/40 hover:text-white transition-colors duration-300 w-fit">
+                {l.label}
+              </a>
             ))}
+          </div>
+
+          {/* Newsletter */}
+          <div>
+            <p className="text-label mb-4">Stay in the loop</p>
+            <p className="text-body mb-6 text-sm">
+              Be the first to know about new ingredients, limited drops, and behind-the-craft stories.
+            </p>
+
+            {sent ? (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-white/60"
+              >
+                ✓ You're on the list.
+              </motion.p>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex gap-3">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.08] rounded-full px-5 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/20 transition-colors"
+                />
+                <button type="submit" className="btn-primary py-3 px-5 text-xs shrink-0">
+                  Join
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4"
-        >
-          <p className="text-sm text-gray-500">
-            © 2024 The Burger. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </a>
-            <span className="text-gray-700">|</span>
-            <a href="#" className="hover:text-white transition-colors">
-              Terms of Service
-            </a>
-            <span className="text-gray-700">|</span>
-            <a href="#" className="hover:text-white transition-colors">
-              Accessibility
-            </a>
+        {/* Bottom row */}
+        <div className="border-t border-white/[0.04] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-label">© 2026 The Burger. All rights reserved.</p>
+
+          <div className="flex items-center gap-6">
+            {SOCIALS.map((s) => (
+              <motion.a
+                key={s.name}
+                href={s.href}
+                whileHover={{ y: -2 }}
+                className="text-xs font-medium tracking-[0.15em] text-white/30 hover:text-white transition-colors"
+                aria-label={s.name}
+              >
+                {s.icon}
+              </motion.a>
+            ))}
           </div>
-        </motion.div>
+
+          <div className="flex items-center gap-4">
+            {["Privacy", "Terms"].map((l) => (
+              <a key={l} href="#" className="text-label hover:text-white/50 transition-colors">{l}</a>
+            ))}
+          </div>
+        </div>
       </div>
     </footer>
   );
