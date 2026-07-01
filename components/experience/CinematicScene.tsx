@@ -81,17 +81,19 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
     return clonedScene;
   }, [scene]);
 
-  // Set initial position and scale imperatively on mount
+  // Set initial position, scale, and rotation imperatively on mount
   // (JSX props removed to prevent R3F re-renders from overwriting useFrame updates)
   const initRef = useRef(false);
-  useFrame(() => {
-    if (!initRef.current && ref.current) {
+  const ref = useRef<Group>(null);
+  
+  useEffect(() => {
+    if (ref.current && !initRef.current) {
       ref.current.position.set(cfg.position.x, cfg.position.y, cfg.position.z);
-      ref.current.scale.setScalar(cfg.scale.x);
+      ref.current.scale.set(cfg.scale.x, cfg.scale.y, cfg.scale.z);
+      ref.current.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
       initRef.current = true;
     }
-  });
-  const ref = useRef<Group>(null);
+  }, [cfg]);
   
   // Mouse drag rotation state
   const isDragging = useRef(false);
@@ -143,29 +145,44 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
     const baseX = cfg.position.x;
     const baseY = cfg.position.y;
     const baseZ = cfg.position.z;
-    const baseScale = cfg.scale.x;
+    const baseScaleX = cfg.scale.x;
+    const baseScaleY = cfg.scale.y;
+    const baseScaleZ = cfg.scale.z;
 
     // Lerp speed — defined early so story block can use it
     const lerpSpeed = 1 - Math.pow(0.01, delta);
 
     let targetY       = baseY;
     let targetOpacity = 1;
-    let targetScale   = baseScale;
+    let scaleMultiplier = 1.0;
+    
+    // Final base scale values (may be overridden for special cases like pickles in spotlight)
+    let finalBaseScaleX = baseScaleX;
+    let finalBaseScaleY = baseScaleY;
+    let finalBaseScaleZ = baseScaleZ;
 
     // ── HERO: idle (s < HERO_END) ──────────────────────────────────
     // positions stay at base, parent group rotates
+    // Keep ingredient rotations at their base config values
+    if (s < HERO_END) {
+      ref.current.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
+    }
 
     // ── OPEN: slight explosion (HERO_END → OPEN_END) ───────────────
     if (s >= HERO_END && s <= OPEN_END) {
       const t = remapClamped(s, HERO_END, OPEN_END, 0, 1);
       const exp = cfg.explodedPosition;
       targetY = MathUtils.lerp(baseY, exp.y, easeInOut(t) * 0.2);
+      // Maintain base rotation during opening
+      ref.current.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
     }
 
     // ── PAUSE: hold at 20% open (OPEN_END → STORY_START) ──────────
     if (s > OPEN_END && s < STORY_START) {
       const exp = cfg.explodedPosition;
       targetY = MathUtils.lerp(baseY, exp.y, 0.2);
+      // Maintain base rotation during pause
+      ref.current.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
     }
 
     // ── STORY (STORY_START → STORY_END) ────────────────────────────
@@ -225,7 +242,17 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
 
         targetY        = finalTargetY;
         targetOpacity  = 1;
-        targetScale    = baseScale * (1 + 0.1 * targetCenterAmt);
+        scaleMultiplier = 1 + 0.1 * targetCenterAmt;
+        
+        // SPECIAL SCALE HANDLING FOR PICKLES
+        // Pickles have squashed Y scale (0.17) in burger, but should show uniform/original scale in spotlight
+        // Override the scale Y value for pickles based on spotlight amount
+        if (ingKey === "pickles") {
+          // In spotlight, use uniform scale (based on X axis which is the original size)
+          // When not in spotlight (targetCenterAmt = 0), use the squashed scale from config
+          const uniformScale = baseScaleX; // 0.34 - the original size
+          finalBaseScaleY = MathUtils.lerp(baseScaleY, uniformScale, targetCenterAmt); // Lerp from 0.17 to 0.34
+        }
         
         // Enable user rotation only at peak spotlight (centerAmt > 0.9)
         canRotate.current = targetCenterAmt > 0.9;
@@ -244,9 +271,10 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         
         // Apply rotation (with user adjustments if at peak)
         if (canRotate.current) {
-          ref.current.rotation.x = targetRotX + userRotation.current.y;
-          ref.current.rotation.y = targetRotY + userRotation.current.x;
-          ref.current.rotation.z = targetRotZ;
+          const finalRotX = targetRotX + userRotation.current.y;
+          const finalRotY = targetRotY + userRotation.current.x;
+          const finalRotZ = targetRotZ;
+          ref.current.rotation.set(finalRotX, finalRotY, finalRotZ);
           
           // LOG ROTATION COORDINATES when in spotlight
           if (Math.random() < 0.05) { // Log occasionally to avoid spam
@@ -260,18 +288,24 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
           }
         } else {
           // Smoothly rotate during transition (no user input yet)
-          ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, targetRotX, lerpSpeed * 3);
-          ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, targetRotY, lerpSpeed * 3);
-          ref.current.rotation.z = MathUtils.lerp(ref.current.rotation.z, targetRotZ, lerpSpeed * 3);
+          const currX = ref.current.rotation.x;
+          const currY = ref.current.rotation.y;
+          const currZ = ref.current.rotation.z;
+          const newX = MathUtils.lerp(currX, targetRotX, lerpSpeed * 3);
+          const newY = MathUtils.lerp(currY, targetRotY, lerpSpeed * 3);
+          const newZ = MathUtils.lerp(currZ, targetRotZ, lerpSpeed * 3);
+          ref.current.rotation.set(newX, newY, newZ);
         }
 
       } else {
         // Non-featured ingredients
         canRotate.current = false;
         // Reset rotation to original when not featured
-        ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, cfg.rotation.x, lerpSpeed * 3);
-        ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, cfg.rotation.y, lerpSpeed * 3);
-        ref.current.rotation.z = cfg.rotation.z;
+        const currX = ref.current.rotation.x;
+        const currY = ref.current.rotation.y;
+        const newX = MathUtils.lerp(currX, cfg.rotation.x, lerpSpeed * 3);
+        const newY = MathUtils.lerp(currY, cfg.rotation.y, lerpSpeed * 3);
+        ref.current.rotation.set(newX, newY, cfg.rotation.z);
         userRotation.current.x = MathUtils.lerp(userRotation.current.x, 0, lerpSpeed * 3);
         userRotation.current.y = MathUtils.lerp(userRotation.current.y, 0, lerpSpeed * 3);
         
@@ -286,7 +320,7 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
           ref.current.position.z = baseZ;
           targetY       = openY;
           targetOpacity = 1; // Keep fully visible
-          targetScale   = baseScale;
+          scaleMultiplier = 1.0;
         } else {
           // Normal behavior: slide right for all other ingredient sections
           ref.current.position.x = MathUtils.lerp(
@@ -297,7 +331,7 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
           ref.current.position.z = baseZ;
           targetY       = openY;
           targetOpacity = clamp(1 - hidden * 1.2, 0, 1);
-          targetScale   = baseScale;
+          scaleMultiplier = 1.0;
         }
       }
     }
@@ -311,7 +345,15 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
       ref.current.position.z = MathUtils.lerp(ref.current.position.z, baseZ, lerpSpeed * 5);
       targetY       = openY;
       targetOpacity = 1; // fully visible immediately — no fade
-      targetScale   = baseScale;
+      scaleMultiplier = 1.0;
+      // Return to base rotation during assembly
+      const currX = ref.current.rotation.x;
+      const currY = ref.current.rotation.y;
+      const currZ = ref.current.rotation.z;
+      const newX = MathUtils.lerp(currX, cfg.rotation.x, lerpSpeed * 5);
+      const newY = MathUtils.lerp(currY, cfg.rotation.y, lerpSpeed * 5);
+      const newZ = MathUtils.lerp(currZ, cfg.rotation.z, lerpSpeed * 5);
+      ref.current.rotation.set(newX, newY, newZ);
     }
 
     // ── FINAL CTA (s >= ASSEMBLE_END) ────────────────────────────
@@ -326,7 +368,9 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
       ref.current.position.x = MathUtils.lerp(ref.current.position.x, baseX, lerpSpeed * 5);
       ref.current.position.z = MathUtils.lerp(ref.current.position.z, baseZ, lerpSpeed * 5);
       targetOpacity = 1;
-      targetScale   = baseScale;
+      scaleMultiplier = 1.0;
+      // Maintain base rotation during CTA
+      ref.current.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
     }
 
     //  X/Z: outside story block, always lerp back to base position smoothly
@@ -336,7 +380,18 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
     }
 
     ref.current.position.y = MathUtils.lerp(ref.current.position.y, targetY, lerpSpeed * 5);
-    ref.current.scale.setScalar(MathUtils.lerp(ref.current.scale.x, targetScale, lerpSpeed * 8));
+    
+    // Apply non-uniform scale properly (lerp each axis independently)
+    const currentScaleX = ref.current.scale.x;
+    const currentScaleY = ref.current.scale.y;
+    const currentScaleZ = ref.current.scale.z;
+    const targetScaleX = finalBaseScaleX * scaleMultiplier;
+    const targetScaleY = finalBaseScaleY * scaleMultiplier;
+    const targetScaleZ = finalBaseScaleZ * scaleMultiplier;
+    const newScaleX = MathUtils.lerp(currentScaleX, targetScaleX, lerpSpeed * 8);
+    const newScaleY = MathUtils.lerp(currentScaleY, targetScaleY, lerpSpeed * 8);
+    const newScaleZ = MathUtils.lerp(currentScaleZ, targetScaleZ, lerpSpeed * 8);
+    ref.current.scale.set(newScaleX, newScaleY, newScaleZ);
 
     // Opacity — handle featured (hard set) vs non-featured (lerp) differently
     const isCurrentlyFeatured = s >= STORY_START && s < STORY_END &&
@@ -364,7 +419,6 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
   return (
     <group
       ref={ref}
-      rotation={[cfg.rotation.x, cfg.rotation.y, cfg.rotation.z]}
       frustumCulled={false}
     >
       <primitive object={cloned} />
