@@ -197,6 +197,8 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         // Spotlight rotation overrides - custom rotation for each ingredient when featured
         const spotlightRotationMap: Partial<Record<Key, { x: number, y: number, z: number }>> = {
           tomato: { x: 0.5968, y: -0.0656, z: -0.0016 },
+          cheese: { x: 0.5191, y: -0.6300, z: 0.0000 },
+          patty: { x: 0.0957, y: 0.4477, z: -0.0424 },
           // Add more ingredients here as you find their perfect angles
         };
         const spotlightRot = spotlightRotationMap[ingKey];
