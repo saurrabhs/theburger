@@ -363,30 +363,50 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
       {/* ── FINAL CTA ─────────────────────────────────────────── */}
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-700"
+        className="absolute inset-0 transition-opacity duration-700"
         style={{ opacity: ctaOpacity, pointerEvents: ctaOpacity > 0.5 ? "auto" : "none" }}
       >
-        <p className="text-label mb-6">— The Perfect Burger</p>
-        <h2 className="font-light text-center leading-none mb-4"
-          style={{ fontSize: "clamp(2.5rem, 5vw, 5.5rem)", letterSpacing: "-0.03em" }}>
-          Crafted to
-          <br />
-          <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
-            perfection.
-          </em>
-        </h2>
-        <p className="text-body text-center max-w-xs mb-10">
-          Every layer considered. Every ingredient sourced with intention.
-          One unforgettable experience.
-        </p>
-        <div className="flex gap-4">
-          <button className="btn-primary">
-            Order Now
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <button className="btn-ghost">Find a Location</button>
+        {/* Left side - Main CTA */}
+        <div className="absolute left-10 lg:left-16 top-1/2 -translate-y-1/2 max-w-md">
+          <p className="text-label mb-6">— The Perfect Burger</p>
+          <h2 className="font-light leading-none mb-4"
+            style={{ fontSize: "clamp(2.5rem, 5vw, 5.5rem)", letterSpacing: "-0.03em" }}>
+            Crafted to
+            <br />
+            <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
+              perfection.
+            </em>
+          </h2>
+          <p className="text-body max-w-xs mb-10">
+            Every layer considered. Every ingredient sourced with intention.
+            One unforgettable experience.
+          </p>
+          <div className="flex gap-4">
+            <button className="btn-primary">
+              Order Now
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button className="btn-ghost">Find a Location</button>
+          </div>
+        </div>
+
+        {/* Right side - Stats/Quality indicators */}
+        <div className="absolute right-10 lg:right-16 top-1/2 -translate-y-1/2 flex flex-col items-end gap-8 text-right">
+          {[
+            { val: "8", label: "Premium Ingredients", detail: "Hand-selected daily" },
+            { val: "100%", label: "Natural", detail: "No artificial flavors" },
+            { val: "★★★★★", label: "Quality", detail: "Michelin-rated" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <div className="text-4xl font-light tracking-tighter mb-2" style={{ color: "var(--orange)" }}>
+                {stat.val}
+              </div>
+              <div className="text-lg font-medium mb-1">{stat.label}</div>
+              <div className="text-label">{stat.detail}</div>
+            </div>
+          ))}
         </div>
       </div>
 
