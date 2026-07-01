@@ -367,60 +367,27 @@ function DynamicLighting({ scrollProgress }: { scrollProgress: number }) {
   return (
     <>
       {/* Ambient — always strong, removes all pitch-black shadows */}
-      <ambientLight intensity={isStory ? 3.0 : 0.5 + warmth * 0.3} color="#ffffff" />
+      <ambientLight intensity={0.5 + warmth * 0.3} color="#ffffff" />
 
       {/* Main directional — key light from upper right */}
       <directionalLight
-        position={[5, 8, 5]} intensity={isStory ? 3.0 : 1.5}
+        position={[5, 8, 5]} intensity={1.5}
         color="#ffffff" castShadow
         shadow-mapSize-width={2048} shadow-mapSize-height={2048}
       />
 
       {/* Fill from upper left */}
-      <directionalLight position={[-5, 5, 3]} intensity={isStory ? 2.5 : 0.8} color="#ffffff" />
+      <directionalLight position={[-5, 5, 3]} intensity={0.8} color="#ffffff" />
 
       {/* FRONT DIRECT — straight from camera direction, lights the face we see */}
-      <directionalLight position={[0, 1.5, 10]} intensity={isStory ? 4.0 : 0.5} color="#ffffff" />
+      <directionalLight position={[0, 1.5, 10]} intensity={0.5} color="#ffffff" />
 
       {/* BELOW — bottom bun is flipped, illuminate from below */}
-      <directionalLight position={[0, -8, 3]} intensity={isStory ? 3.5 : 0.3} color="#fff8f0" />
-
-      {/* Extra bun spotlight — fires a tight beam directly at the featured bun */}
-      {isBunFeatured && (
-        <>
-          {/* Bright spotlight from directly front-center */}
-          <spotLight
-            position={[0, 1.5, 9]}
-            target-position={[0, 1.5, 0]}
-            intensity={80}
-            angle={0.5}
-            penumbra={0.4}
-            color="#ffffff"
-          />
-          {/* Second spot from below for bottom bun's underside */}
-          <spotLight
-            position={[0, -5, 6]}
-            target-position={[0, 1.5, 0]}
-            intensity={60}
-            angle={0.5}
-            penumbra={0.4}
-            color="#fff5e0"
-          />
-          {/* Third spot from above for top bun's dome */}
-          <spotLight
-            position={[0, 8, 4]}
-            target-position={[0, 1.5, 0]}
-            intensity={60}
-            angle={0.5}
-            penumbra={0.4}
-            color="#ffffff"
-          />
-        </>
-      )}
+      <directionalLight position={[0, -8, 3]} intensity={0.3} color="#fff8f0" />
 
       {/* Left/right wraps during story */}
-      <pointLight position={[-6, 1.5, 4]} intensity={isStory ? 2.0 : 0.4} color="#ffffff" />
-      <pointLight position={[ 6, 1.5, 4]} intensity={isStory ? 2.0 : 0.4} color="#ffffff" />
+      <pointLight position={[-6, 1.5, 4]} intensity={0.4} color="#ffffff" />
+      <pointLight position={[ 6, 1.5, 4]} intensity={0.4} color="#ffffff" />
 
       {/* Rim accent lights */}
       <pointLight position={[-5, 3, -5]} intensity={0.6} color="#FF6B35" />
