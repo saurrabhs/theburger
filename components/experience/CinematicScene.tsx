@@ -193,6 +193,13 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
           onions:    1.3,
         };
         const centerY = centerYMap[ingKey] ?? 1.8;
+        
+        // Spotlight rotation overrides - custom rotation for each ingredient when featured
+        const spotlightRotationMap: Partial<Record<Key, { x: number, y: number, z: number }>> = {
+          tomato: { x: 0.5968, y: -0.0656, z: -0.0016 },
+          // Add more ingredients here as you find their perfect angles
+        };
+        const spotlightRot = spotlightRotationMap[ingKey];
 
         const toCenter        = remapClamped(featuredT, 0.05, 0.35, 0, 1);
         const fromCenter      = remapClamped(featuredT, 0.75, 0.98, 0, 1);
@@ -217,19 +224,39 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         // Enable user rotation only at peak spotlight (centerAmt > 0.9)
         canRotate.current = targetCenterAmt > 0.9;
         
-        // Apply user rotation when featured and at peak
+        // Calculate target rotation based on spotlight or original
+        let targetRotX = cfg.rotation.x;
+        let targetRotY = cfg.rotation.y;
+        let targetRotZ = cfg.rotation.z;
+        
+        if (spotlightRot) {
+          // Smoothly interpolate from burger rotation to spotlight rotation based on centerAmt
+          targetRotX = MathUtils.lerp(cfg.rotation.x, spotlightRot.x, targetCenterAmt);
+          targetRotY = MathUtils.lerp(cfg.rotation.y, spotlightRot.y, targetCenterAmt);
+          targetRotZ = MathUtils.lerp(cfg.rotation.z, spotlightRot.z, targetCenterAmt);
+        }
+        
+        // Apply rotation (with user adjustments if at peak)
         if (canRotate.current) {
-          ref.current.rotation.x = cfg.rotation.x + userRotation.current.y;
-          ref.current.rotation.y = cfg.rotation.y + userRotation.current.x;
-          ref.current.rotation.z = cfg.rotation.z;
+          ref.current.rotation.x = targetRotX + userRotation.current.y;
+          ref.current.rotation.y = targetRotY + userRotation.current.x;
+          ref.current.rotation.z = targetRotZ;
+          
+          // LOG ROTATION COORDINATES when in spotlight
+          if (Math.random() < 0.05) { // Log occasionally to avoid spam
+            console.log(`[${ingKey} SPOTLIGHT ROTATION]`, {
+              x: ref.current.rotation.x.toFixed(4),
+              y: ref.current.rotation.y.toFixed(4),
+              z: ref.current.rotation.z.toFixed(4),
+              userRotX: userRotation.current.x.toFixed(4),
+              userRotY: userRotation.current.y.toFixed(4)
+            });
+          }
         } else {
-          // Smoothly reset to original rotation when not at peak
-          ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, cfg.rotation.x, lerpSpeed * 3);
-          ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, cfg.rotation.y, lerpSpeed * 3);
-          ref.current.rotation.z = cfg.rotation.z;
-          // Reset user rotation
-          userRotation.current.x = MathUtils.lerp(userRotation.current.x, 0, lerpSpeed * 3);
-          userRotation.current.y = MathUtils.lerp(userRotation.current.y, 0, lerpSpeed * 3);
+          // Smoothly rotate during transition (no user input yet)
+          ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, targetRotX, lerpSpeed * 3);
+          ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, targetRotY, lerpSpeed * 3);
+          ref.current.rotation.z = MathUtils.lerp(ref.current.rotation.z, targetRotZ, lerpSpeed * 3);
         }
 
       } else {
