@@ -22,7 +22,7 @@
 import { useRef, useMemo, Suspense, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, PerspectiveCamera, ContactShadows } from "@react-three/drei";
-import { Group, MathUtils } from "three";
+import { Group, MathUtils, Vector2 } from "three";
 import { useGLTF } from "@react-three/drei";
 import { BURGER_CONFIG, CAMERA_CONFIG } from "@/config/BurgerConfig";
 
@@ -92,6 +92,49 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
     }
   });
   const ref = useRef<Group>(null);
+  
+  // Mouse drag rotation state
+  const isDragging = useRef(false);
+  const previousMouse = useRef(new Vector2());
+  const userRotation = useRef({ x: 0, y: 0 });
+  const canRotate = useRef(false);
+  
+  // Mouse event handlers for drag rotation
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (canRotate.current) {
+        isDragging.current = true;
+        previousMouse.current.set(e.clientX, e.clientY);
+      }
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging.current && canRotate.current) {
+        const deltaX = e.clientX - previousMouse.current.x;
+        const deltaY = e.clientY - previousMouse.current.y;
+        
+        // Update rotation based on mouse delta
+        userRotation.current.x += deltaX * 0.01; // Horizontal drag = Y rotation
+        userRotation.current.y += deltaY * 0.01; // Vertical drag = X rotation
+        
+        previousMouse.current.set(e.clientX, e.clientY);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+    
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   useFrame((_state, delta) => {
     if (!ref.current) return;
@@ -170,9 +213,35 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         targetY        = finalTargetY;
         targetOpacity  = 1;
         targetScale    = baseScale * (1 + 0.1 * targetCenterAmt);
+        
+        // Enable user rotation only at peak spotlight (centerAmt > 0.9)
+        canRotate.current = targetCenterAmt > 0.9;
+        
+        // Apply user rotation when featured and at peak
+        if (canRotate.current) {
+          ref.current.rotation.x = cfg.rotation.x + userRotation.current.y;
+          ref.current.rotation.y = cfg.rotation.y + userRotation.current.x;
+          ref.current.rotation.z = cfg.rotation.z;
+        } else {
+          // Smoothly reset to original rotation when not at peak
+          ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, cfg.rotation.x, lerpSpeed * 3);
+          ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, cfg.rotation.y, lerpSpeed * 3);
+          ref.current.rotation.z = cfg.rotation.z;
+          // Reset user rotation
+          userRotation.current.x = MathUtils.lerp(userRotation.current.x, 0, lerpSpeed * 3);
+          userRotation.current.y = MathUtils.lerp(userRotation.current.y, 0, lerpSpeed * 3);
+        }
 
       } else {
         // Non-featured ingredients
+        canRotate.current = false;
+        // Reset rotation to original when not featured
+        ref.current.rotation.x = MathUtils.lerp(ref.current.rotation.x, cfg.rotation.x, lerpSpeed * 3);
+        ref.current.rotation.y = MathUtils.lerp(ref.current.rotation.y, cfg.rotation.y, lerpSpeed * 3);
+        ref.current.rotation.z = cfg.rotation.z;
+        userRotation.current.x = MathUtils.lerp(userRotation.current.x, 0, lerpSpeed * 3);
+        userRotation.current.y = MathUtils.lerp(userRotation.current.y, 0, lerpSpeed * 3);
+        
         const hideT  = remapClamped(featuredT, 0.00, 0.25, 0, 1);
         const showT  = remapClamped(featuredT, 0.75, 1.00, 0, 1);
         const hidden = easeInOut(hideT) * (1 - easeInOut(showT));
