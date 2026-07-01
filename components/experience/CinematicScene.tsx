@@ -405,15 +405,29 @@ function BurgerGroup({ scrollProgress }: BurgerGroupProps) {
 
     if (scrollProgress < HERO_END) {
       // Hero section: auto-rotate unless manually rotated
+      // Sync manualRotationRef with current rotation when entering hero section
+      // This ensures smooth transition from any angle
       if (autoRotateRef.current) {
+        // On first frame in hero, sync to current rotation
+        const diff = Math.abs(manualRotationRef.current - groupRef.current.rotation.y);
+        if (diff > 0.1) {
+          manualRotationRef.current = groupRef.current.rotation.y;
+        }
         manualRotationRef.current += delta * 0.4;
       }
       groupRef.current.rotation.y = manualRotationRef.current;
     } else {
       // Once scrolling starts, smoothly snap Y rotation to 0 (front-facing)
-      // This ensures ingredient hide/show is always consistent regardless of spin angle
+      // Normalize the current rotation to [-π, π] to take the shortest path to 0
+      const currentRot = groupRef.current.rotation.y;
+      const TWO_PI = Math.PI * 2;
+      
+      // Normalize to [-π, π] range
+      const normalizedRot = ((currentRot % TWO_PI) + Math.PI * 3) % TWO_PI - Math.PI;
+      
+      // Lerp from normalized angle to 0 (shortest path)
       groupRef.current.rotation.y = MathUtils.lerp(
-        groupRef.current.rotation.y,
+        normalizedRot,
         0,
         1 - Math.pow(0.001, delta)
       );
