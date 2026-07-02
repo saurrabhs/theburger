@@ -3,16 +3,22 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 
+// Scroll phase constants matching TextOverlay
+const HERO_END      = 0.04;
+const STORY_START   = 0.12;
+const STORY_END     = 0.88;
+const ASSEMBLE_END  = 0.90;
+
+// Map nav links to scroll progress values
 const NAV_LINKS = [
-  { name: "Story",       href: "#story" },
-  { name: "Ingredients", href: "#ingredients" },
-  { name: "Nutrition",   href: "#nutrition" },
-  { name: "Experience",  href: "#experience" },
+  { name: "Story",       scrollTarget: 0.08 }, // "Revealing the layers" fully visible
+  { name: "Ingredients", scrollTarget: STORY_START + 0.05 }, // First ingredient fully visible
+  { name: "Experience",  scrollTarget: 0.95 },
 ];
 
 export default function Navbar() {
   const [hidden, setHidden]   = useState(false);
-  const [active, setActive]   = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
   const [menuOpen, setMenu]   = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const lastY = useRef(0);
@@ -25,24 +31,42 @@ export default function Navbar() {
     lastY.current = y;
   });
 
-  // Track active section
+  // Calculate scroll progress and determine active section
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.target.id) {
-            setActive(entry.target.id);
-          }
-        });
-      },
-      { threshold: 0.3, rootMargin: "-100px" }
-    );
+    const updateActiveSection = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollProgress = Math.min(Math.max(scrollTop / scrollHeight, 0), 1);
 
-    const sections = document.querySelectorAll("section[id]");
-    sections.forEach((section) => observer.observe(section));
+      // Determine which section is active based on scrollProgress
+      if (scrollProgress < 0.06) {
+        setActiveIndex(-1); // No section active (hero)
+      } else if (scrollProgress < STORY_START) {
+        setActiveIndex(0); // Story (opening/revealing phase)
+      } else if (scrollProgress < STORY_END) {
+        setActiveIndex(1); // Ingredients (story phase)
+      } else {
+        setActiveIndex(2); // Experience
+      }
+    };
 
-    return () => sections.forEach((section) => observer.unobserve(section));
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    updateActiveSection();
+    return () => window.removeEventListener("scroll", updateActiveSection);
   }, []);
+
+  // Smooth scroll to target scroll progress
+  const scrollToProgress = (targetProgress: number) => {
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const targetScrollTop = targetProgress * scrollHeight;
+    
+    window.scrollTo({
+      top: targetScrollTop,
+      behavior: "smooth"
+    });
+    
+    setMenu(false);
+  };
 
   return (
     <>
@@ -67,13 +91,13 @@ export default function Navbar() {
 
           {/* Links - desktop */}
           <div className="hidden md:flex items-center gap-5">
-            {NAV_LINKS.map((link) => {
-              const isActive = active === link.href.slice(1);
+            {NAV_LINKS.map((link, index) => {
+              const isActive = activeIndex === index;
               return (
-                <a
+                <button
                   key={link.name}
-                  href={link.href}
-                  className="relative text-[0.58rem] font-medium tracking-[0.12em] uppercase transition-all duration-500 hover:text-white"
+                  onClick={() => scrollToProgress(link.scrollTarget)}
+                  className="relative text-[0.58rem] font-medium tracking-[0.12em] uppercase transition-all duration-500 hover:text-white cursor-pointer"
                   style={{ 
                     color: isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.35)'
                   }}
@@ -87,18 +111,18 @@ export default function Navbar() {
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
-                </a>
+                </button>
               );
             })}
           </div>
 
           {/* CTA - desktop */}
-          <a
-            href="#experience"
+          <button
+            onClick={() => scrollToProgress(0.95)}
             className="hidden md:block btn-primary text-[0.58rem] py-1.5 px-4 scale-90"
           >
             Order Now
-          </a>
+          </button>
 
           {/* Mobile hamburger */}
           <button
@@ -121,18 +145,20 @@ export default function Navbar() {
         className={`fixed inset-x-6 top-28 z-[800] glass-strong rounded-2xl p-6 flex flex-col gap-4 md:hidden ${menuOpen ? "pointer-events-auto" : "pointer-events-none"}`}
       >
         {NAV_LINKS.map((link) => (
-          <a
+          <button
             key={link.name}
-            href={link.href}
-            onClick={() => setMenu(false)}
-            className="text-sm font-medium tracking-[0.12em] uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-0"
+            onClick={() => scrollToProgress(link.scrollTarget)}
+            className="text-sm font-medium tracking-[0.12em] uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-0 text-left"
           >
             {link.name}
-          </a>
+          </button>
         ))}
-        <a href="#experience" className="btn-primary text-center mt-2" onClick={() => setMenu(false)}>
+        <button 
+          onClick={() => scrollToProgress(0.95)} 
+          className="btn-primary text-center mt-2"
+        >
           Order Now
-        </a>
+        </button>
       </motion.div>
     </>
   );
