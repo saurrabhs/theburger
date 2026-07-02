@@ -163,7 +163,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
       {/* ── HERO text ──────────────────────────────────────────── */}
       <div 
-        className="absolute inset-0 transition-opacity duration-500"
+        className="absolute inset-0"
         style={{ 
           opacity: remapClamped(scrollProgress, 0, HERO_END, 1, 0),
           pointerEvents: scrollProgress < HERO_END ? 'auto' : 'none'
@@ -175,7 +175,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-0 items-start lg:items-center" style={{ paddingTop: window.innerWidth < 768 ? '18vh' : '0' }}>
             {/* Left side - Main content */}
             <div 
-              className="flex flex-col gap-5 transition-all duration-500 text-center lg:text-left items-center lg:items-start"
+              className="flex flex-col gap-5 text-center lg:text-left items-center lg:items-start"
               style={{ 
                 transform: `translateX(${remapClamped(scrollProgress, 0, HERO_END, 0, -40)}px)`
               }}
@@ -215,7 +215,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
             {/* Right side - Premium quality indicators (hidden on mobile, show on tablets+) */}
             <div 
-              className="hidden md:flex flex-col items-end gap-12 text-right transition-all duration-500"
+              className="hidden md:flex flex-col items-end gap-12 text-right"
               style={{ 
                 transform: `translateX(${remapClamped(scrollProgress, 0, HERO_END, 0, 40)}px)`
               }}
@@ -275,20 +275,20 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
       {/* ── OPENING PHASE TEXT ───────────────────────────────────────── */}
       {(phase === "opening" || (phase === "pause" && scrollProgress < STORY_START)) && (
         <div
-          className="absolute left-4 sm:left-10 lg:left-20 max-w-[85vw] sm:max-w-md transition-all duration-700"
+          className="absolute left-4 sm:left-10 lg:left-20 max-w-[85vw] sm:max-w-md"
           style={{ 
             top: window.innerWidth < 768 ? "20%" : "50%",
             transform: window.innerWidth < 768
               ? `translateY(0) translateX(${
                   remapClamped(scrollProgress, HERO_END, HERO_END + 0.02, -30, 0) + 
-                  remapClamped(scrollProgress, OPEN_END - 0.02, OPEN_END + 0.02, 0, -30)
+                  remapClamped(scrollProgress, OPEN_END - 0.01, STORY_START, 0, -40)
                 }px)`
               : `translateY(-50%) translateX(${
                   remapClamped(scrollProgress, HERO_END, HERO_END + 0.02, -30, 0) + 
-                  remapClamped(scrollProgress, OPEN_END - 0.02, OPEN_END + 0.02, 0, -30)
+                  remapClamped(scrollProgress, OPEN_END - 0.01, STORY_START, 0, -40)
                 }px)`,
             opacity: remapClamped(scrollProgress, HERO_END, HERO_END + 0.02, 0, 1) * 
-                     (1 - remapClamped(scrollProgress, OPEN_END - 0.02, OPEN_END + 0.02, 0, 1))
+                     (1 - remapClamped(scrollProgress, OPEN_END, STORY_START, 0, 1))
           }}
         >
           <div className="flex flex-col gap-4">
@@ -331,7 +331,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
       {/* ── OPENING HINT (bottom) ───────────────────────────────────────── */}
       <div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-center transition-opacity duration-300"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-center"
         style={{ opacity: openingOpacity }}
       >
         <p className="text-label">Scroll to open the burger</p>
@@ -341,7 +341,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
       {showPanel && copy && cfg && (
         <div
           key={active!.key}
-          className="absolute left-0 pointer-events-none flex flex-col transition-all duration-500"
+          className="absolute left-0 pointer-events-none flex flex-col"
           style={{
             top: window.innerWidth < 768 ? "15%" : "50%",
             transform: window.innerWidth < 768 
@@ -368,7 +368,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
           {/* Accent line */}
           <div
-            className="mb-3 origin-left transition-all duration-500"
+            className="mb-3 origin-left"
             style={{ 
               background: cfg.color, 
               width: "clamp(24px, 8vw, 36px)", 
@@ -438,12 +438,12 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
               const isPast    = i < idx;
               return (
                 <div key={k} className="flex items-center gap-3">
-                  <span className="text-label transition-all duration-300"
+                  <span className="text-label"
                     style={{ opacity: isCurrent ? 1 : isPast ? 0.3 : 0.12 }}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div
-                    className="h-px transition-all duration-500"
+                    className="h-px"
                     style={{
                       width: isCurrent ? 32 : isPast ? 16 : 8,
                       background: isCurrent
@@ -473,7 +473,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
             <p className="text-label mb-3">— Coming together</p>
             <div className="w-48 h-px bg-white/5 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-300"
+                className="h-full rounded-full"
                 style={{
                   width: `${assembleProgress * 100}%`,
                   background: "linear-gradient(to right, var(--orange), var(--amber))",
@@ -486,7 +486,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
 
       {/* ── FINAL CTA ─────────────────────────────────────────── */}
       <div
-        className="absolute inset-0 transition-opacity duration-700"
+        className="absolute inset-0"
         style={{ opacity: ctaOpacity, pointerEvents: ctaOpacity > 0.5 ? "auto" : "none" }}
       >
         <div className="container-custom h-full flex flex-col justify-between py-8 md:py-0 md:justify-center">
@@ -589,7 +589,7 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
       {/* ── SCROLL PROGRESS indicator — thin left edge line ─── */}
       <div className="fixed left-0 top-0 bottom-0 w-px">
         <div
-          className="w-full rounded-full transition-all duration-100"
+          className="w-full rounded-full"
           style={{
             height: `${scrollProgress * 100}%`,
             background: "linear-gradient(to bottom, var(--orange), var(--amber))",

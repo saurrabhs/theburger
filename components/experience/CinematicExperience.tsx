@@ -25,28 +25,42 @@ const TOTAL_VH = 1 + 1 + 8 * 3 + 1.5 + 2 + 0.5; // = 30vh
 export default function CinematicExperience() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>();
 
-  const handleScroll = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
+  useEffect(() => {
+    // Use Lenis scroll events for smooth synchronization
+    const lenis = (window as any).__lenis;
+    
+    const updateScrollProgress = () => {
       if (!containerRef.current) return;
+      
+      // Get Lenis scroll position (smooth interpolated value)
+      const scrollY = lenis ? lenis.scroll : window.scrollY;
+      
       const rect = containerRef.current.getBoundingClientRect();
       const totalScrollable = containerRef.current.offsetHeight - window.innerHeight;
       const scrolled = -rect.top;
       const progress = Math.min(Math.max(scrolled / totalScrollable, 0), 1);
       setScrollProgress(progress);
-    });
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [handleScroll]);
+
+    if (lenis) {
+      // Listen to Lenis scroll events (fires every frame during smooth scroll)
+      lenis.on('scroll', updateScrollProgress);
+    } else {
+      // Fallback to native scroll if Lenis not available
+      window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    }
+    
+    updateScrollProgress();
+
+    return () => {
+      if (lenis) {
+        lenis.off('scroll', updateScrollProgress);
+      } else {
+        window.removeEventListener("scroll", updateScrollProgress);
+      }
+    };
+  }, []);
 
   return (
     <>
