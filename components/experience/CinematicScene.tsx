@@ -197,14 +197,12 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
       const exp   = cfg.explodedPosition;
       const openY = MathUtils.lerp(baseY, exp.y, 0.2);
 
-      // Special handling for topBun section to prevent disappearing bug
-      const isTopBunSection = featuredIndex === 0;
-
       if (isFeatured) {
         const centerYMap: Partial<Record<Key, number>> = {
-          topBun:    1.8,
+          topBun:    2.0,  // Keep at reasonable height in camera view
           bottomBun: 2.2,
           lettuce:   2.1,
+          tomato:    2.0,
           patty:     1.1,
           pickles:   1.3,
           onions:    1.3,
@@ -231,18 +229,30 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         const finalTargetX = MathUtils.lerp(baseX, 0, targetCenterAmt);
         const finalTargetY = MathUtils.lerp(openY, centerY, targetCenterAmt);
 
-        // Hard-reset position if ingredient is off-screen (coming from slide-right)
-        // Do this BEFORE lerp so it doesn't drift in from the right
-        if (Math.abs(ref.current.position.x - baseX) > 2) {
-          ref.current.position.x = finalTargetX;
-        } else {
-          ref.current.position.x = MathUtils.lerp(ref.current.position.x, finalTargetX, lerpSpeed * 5);
-        }
+        // Ensure position never goes beyond screen bounds
+        ref.current.position.x = MathUtils.clamp(
+          MathUtils.lerp(ref.current.position.x, finalTargetX, lerpSpeed * 5),
+          -10,
+          10
+        );
         ref.current.position.z = baseZ;
 
         targetY        = finalTargetY;
-        targetOpacity  = 1;
+        targetOpacity  = 1; // Always fully visible when featured
         scaleMultiplier = 1 + 0.1 * targetCenterAmt;
+        
+        // Debug logging for topBun
+        if (ingKey === "topBun" && Math.random() < 0.1) {
+          console.log("[topBun FEATURED]", {
+            featuredT: featuredT.toFixed(3),
+            centerAmt: targetCenterAmt.toFixed(3),
+            posX: ref.current.position.x.toFixed(2),
+            posY: targetY.toFixed(2),
+            opacity: targetOpacity,
+            baseX,
+            finalTargetX: finalTargetX.toFixed(2)
+          });
+        }
         
         // SPECIAL SCALE HANDLING FOR PICKLES
         // Pickles have squashed Y scale (0.17) in burger, but should show uniform/original scale in spotlight
@@ -313,26 +323,24 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
         const showT  = remapClamped(featuredT, 0.75, 1.00, 0, 1);
         const hidden = easeInOut(hideT) * (1 - easeInOut(showT));
 
-        if (isTopBunSection) {
-          // WORKAROUND: During topBun section, keep all ingredients visible at their positions
-          // This prevents a rendering bug where topBun disappears
-          ref.current.position.x = MathUtils.lerp(ref.current.position.x, baseX, lerpSpeed * 4);
-          ref.current.position.z = baseZ;
-          targetY       = openY;
-          targetOpacity = 1; // Keep fully visible
-          scaleMultiplier = 1.0;
+        // All non-featured ingredients slide away to the right
+        ref.current.position.x = MathUtils.lerp(
+          ref.current.position.x,
+          baseX + 14 * hidden,
+          lerpSpeed * 6
+        );
+        ref.current.position.z = baseZ;
+        targetY       = openY;
+        
+        // SPECIAL CASE: During topBun section (featuredIndex === 0), keep opacity at 1
+        // to prevent rendering bug where topBun disappears
+        if (featuredIndex === 0) {
+          targetOpacity = 1; // Keep all ingredients fully visible during crown section
         } else {
-          // Normal behavior: slide right for all other ingredient sections
-          ref.current.position.x = MathUtils.lerp(
-            ref.current.position.x,
-            baseX + 14 * hidden,
-            lerpSpeed * 6
-          );
-          ref.current.position.z = baseZ;
-          targetY       = openY;
-          targetOpacity = clamp(1 - hidden * 1.2, 0, 1);
-          scaleMultiplier = 1.0;
+          targetOpacity = clamp(1 - hidden * 1.2, 0, 1); // Normal fade for other sections
         }
+        
+        scaleMultiplier = 1.0;
       }
     }
 
