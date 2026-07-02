@@ -16,6 +16,8 @@ const DevEditor = dynamic(
 );
 
 export default function Home() {
+  const isDev = process.env.NODE_ENV === 'development';
+  
   return (
     <>
       <PageLoader />
@@ -29,7 +31,7 @@ export default function Home() {
       </main>
 
       <ScrollToTop />
-      <DevEditor />
+      {isDev && <DevEditor />}
     </>
   );
 }
