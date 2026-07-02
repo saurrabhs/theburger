@@ -2,7 +2,6 @@ import dynamic from "next/dynamic";
 import Navbar     from "@/components/layout/Navbar";
 import PageLoader from "@/components/ui/PageLoader";
 import ScrollToTop from "@/components/ui/ScrollToTop";
-import HeroRotationControls from "@/components/ui/HeroRotationControls";
 
 // The entire cinematic experience — lazy loaded (heavy 3D)
 const CinematicExperience = dynamic(
@@ -23,9 +22,6 @@ export default function Home() {
 
       {/* Floating navbar — always on top */}
       <Navbar />
-
-      {/* Hero Rotation Controls */}
-      <HeroRotationControls />
 
       {/* The entire website is one continuous cinematic scroll */}
       <main style={{ background: "var(--dark-900)" }}>

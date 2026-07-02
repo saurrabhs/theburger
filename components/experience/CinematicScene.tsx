@@ -434,7 +434,7 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
   );
 }
 
-// ─── The burger group (handles hero spin + rotation snap) ────────────────────
+// ─── The burger group (handles hero spin + rotation snap + mobile scaling) ────────────────────
 
 interface BurgerGroupProps {
   scrollProgress: number;
@@ -444,6 +444,17 @@ function BurgerGroup({ scrollProgress }: BurgerGroupProps) {
   const groupRef = useRef<Group>(null);
   const manualRotationRef = useRef<number>(0);
   const autoRotateRef = useRef<boolean>(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Expose rotation controls globally for buttons
   useEffect(() => {
@@ -464,6 +475,13 @@ function BurgerGroup({ scrollProgress }: BurgerGroupProps) {
 
   useFrame((_state, delta) => {
     if (!groupRef.current) return;
+
+    // Mobile scaling - scale down burger by 50% on mobile
+    const targetScale = isMobile ? 0.5 : 1.0;
+    const currentScale = groupRef.current.scale.x;
+    groupRef.current.scale.setScalar(
+      MathUtils.lerp(currentScale, targetScale, 1 - Math.pow(0.001, delta))
+    );
 
     if (scrollProgress < HERO_END) {
       // Hero section: auto-rotate unless manually rotated
@@ -510,13 +528,26 @@ function BurgerGroup({ scrollProgress }: BurgerGroupProps) {
 function CameraDrift({ scrollProgress }: { scrollProgress: number }) {
   const { camera } = useThree();
   const targetRef = useRef({ x: 0, y: 0, z: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useFrame((_state, delta) => {
+    // Mobile: zoom out more to show full burger
+    const mobileZoomOffset = isMobile ? 2.5 : 0;
+    
     // Very subtle camera movement based on scroll
-    let targetZ = CAMERA_CONFIG.position.z;
+    let targetZ = CAMERA_CONFIG.position.z + mobileZoomOffset;
     if (scrollProgress >= ASSEMBLE_END) {
       // Slowly zoom in for CTA
-      targetZ = CAMERA_CONFIG.position.z - 1.5 * remapClamped(scrollProgress, ASSEMBLE_END, 1, 0, 1);
+      targetZ = CAMERA_CONFIG.position.z + mobileZoomOffset - 1.5 * remapClamped(scrollProgress, ASSEMBLE_END, 1, 0, 1);
     }
 
     const lerpSpeed = 1 - Math.pow(0.001, delta);
