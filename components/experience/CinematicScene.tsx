@@ -23,7 +23,7 @@ import { useRef, useMemo, Suspense, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, PerspectiveCamera, ContactShadows } from "@react-three/drei";
 import { Group, MathUtils, Vector2 } from "three";
-import { useGLTF } from "@react-three/drei";
+import { useGLTFWithKTX2 } from "@/hooks/useGLTFWithKTX2";
 import { BURGER_CONFIG, CAMERA_CONFIG } from "@/config/BurgerConfig";
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -69,9 +69,9 @@ interface IngredientMeshProps {
 
 function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
   const cfg = BURGER_CONFIG[ingKey];
-  const { scene } = useGLTF(`/models/${cfg.name}.glb`);
+  const gltf = useGLTFWithKTX2(`/models/${cfg.name}.glb`);
   const cloned = useMemo(() => {
-    const clonedScene = scene.clone(true);
+    const clonedScene = gltf.scene.clone(true);
     // Disable frustum culling on all children to prevent disappearing
     clonedScene.traverse((child: any) => {
       if (child.isMesh) {
@@ -79,7 +79,7 @@ function IngredientMesh({ ingKey, scrollProgress }: IngredientMeshProps) {
       }
     });
     return clonedScene;
-  }, [scene]);
+  }, [gltf.scene]);
 
   // Set initial position, scale, and rotation imperatively on mount
   // (JSX props removed to prevent R3F re-renders from overwriting useFrame updates)

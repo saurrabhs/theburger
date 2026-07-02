@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KTX2 Basis Transcoder Test</title>
+</head>
+<body>
+  <h1>✅ Basis Universal Transcoder Files Present</h1>
+  <p>If you can see this page, the transcoder files are correctly served from /basis/</p>
+  <ul>
+    <li>basis_transcoder.js: <span id="js-status">checking...</span></li>
+    <li>basis_transcoder.wasm: <span id="wasm-status">checking...</span></li>
+  </ul>
+  
+  <script>
+    // Test if files are accessible
+    fetch('/basis/basis_transcoder.js')
+      .then(res => res.ok ? 'OK ✓' : 'FAILED ✗')
+      .then(status => document.getElementById('js-status').textContent = status);
+    
+    fetch('/basis/basis_transcoder.wasm')
+      .then(res => res.ok ? 'OK ✓' : 'FAILED ✗')
+      .then(status => document.getElementById('wasm-status').textContent = status);
+  </script>
+</body>
+</html>

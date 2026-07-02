@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useMemo } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useGLTFWithKTX2 } from "@/hooks/useGLTFWithKTX2";
 import { Group } from "three";
 import { IngredientConfig } from "@/config/BurgerConfig";
 
@@ -15,8 +15,8 @@ export default function Ingredient({ config, groupRef }: IngredientProps) {
   const internalRef = useRef<Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  const { scene } = useGLTF(`/models/${config.name}.glb`);
-  const clonedScene = useMemo(() => scene.clone(true), [scene]);
+  const gltf = useGLTFWithKTX2(`/models/${config.name}.glb`);
+  const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
 
   // Merge external ref with internal ref
   const setRef = (el: Group | null) => {
@@ -41,8 +41,3 @@ export default function Ingredient({ config, groupRef }: IngredientProps) {
     </group>
   );
 }
-
-// Preload all models
-["top bu", "lettuc", "tomato", "cheese", "petty", "pickle slice", "onions"].forEach((name) => {
-  useGLTF.preload(`/models/${name}.glb`);
-});

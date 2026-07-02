@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { TransformControls, OrbitControls, PerspectiveCamera, useGLTF, Environment, Line } from "@react-three/drei";
+import { TransformControls, OrbitControls, PerspectiveCamera, Environment, Line } from "@react-three/drei";
+import { useGLTFWithKTX2 } from "@/hooks/useGLTFWithKTX2";
 import { Group } from "three";
 import { BURGER_CONFIG, CAMERA_CONFIG, IngredientConfig } from "@/config/BurgerConfig";
 
@@ -60,8 +61,8 @@ interface EditableIngredientProps {
 
 function EditableIngredient({ ingredientKey, transform, selected, mode, onTransformChange, onSelect, orbitRef }: EditableIngredientProps) {
   const cfg = BURGER_CONFIG[ingredientKey];
-  const { scene } = useGLTF(`/models/${cfg.name}.glb`);
-  const cloned = useMemo(() => scene.clone(true), [scene]);
+  const gltf = useGLTFWithKTX2(`/models/${cfg.name}.glb`);
+  const cloned = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
   const groupRef = useRef<Group>(null);
   const tcRef = useRef<any>(null);
   const isDragging = useRef(false);
