@@ -13,7 +13,6 @@ export default function SmoothScrollProvider({ children }: { children: React.Rea
       gestureOrientation: 'vertical',
       smoothWheel: true,     // Enable smooth wheel scrolling
       wheelMultiplier: 1,    // Scroll speed multiplier
-      smoothTouch: false,    // Disable on touch devices (better performance on mobile)
       touchMultiplier: 2,
       infinite: false,
     });

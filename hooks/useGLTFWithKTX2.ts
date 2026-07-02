@@ -7,15 +7,17 @@
  * Works with React Suspense for loading states.
  */
 
-import { useEffect, useState, useMemo } from "react";
 import { useThree } from "@react-three/fiber";
-import { KTX2Loader } from "three-stdlib";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { GLTF } from "three-stdlib";
+import type { WebGLRenderer } from "three";
+
+// Use any to avoid type conflicts between three and three-stdlib
+type GLTFResult = any;
 
 // Cache for loaded models and loading promises
-const gltfCache = new Map<string, GLTF>();
-const loadingPromises = new Map<string, Promise<GLTF>>();
+const gltfCache = new Map<string, GLTFResult>();
+const loadingPromises = new Map<string, Promise<GLTFResult>>();
 
 // Global KTX2Loader instance (singleton)
 let ktx2LoaderInstance: KTX2Loader | null = null;
@@ -23,7 +25,7 @@ let ktx2LoaderInstance: KTX2Loader | null = null;
 /**
  * Get or create the KTX2Loader instance
  */
-function getKTX2Loader(renderer: THREE.WebGLRenderer): KTX2Loader {
+function getKTX2Loader(renderer: WebGLRenderer): KTX2Loader {
   if (!ktx2LoaderInstance) {
     ktx2LoaderInstance = new KTX2Loader();
     ktx2LoaderInstance.setTranscoderPath("/basis/");
@@ -36,7 +38,7 @@ function getKTX2Loader(renderer: THREE.WebGLRenderer): KTX2Loader {
 /**
  * Load a GLTF model with KTX2 support
  */
-function loadGLTF(url: string, gl: THREE.WebGLRenderer): Promise<GLTF> {
+function loadGLTF(url: string, gl: WebGLRenderer): Promise<GLTFResult> {
   // Return cached model if available
   if (gltfCache.has(url)) {
     return Promise.resolve(gltfCache.get(url)!);
@@ -48,7 +50,7 @@ function loadGLTF(url: string, gl: THREE.WebGLRenderer): Promise<GLTF> {
   }
 
   // Create new loading promise
-  const promise = new Promise<GLTF>((resolve, reject) => {
+  const promise = new Promise<GLTFResult>((resolve, reject) => {
     const ktx2Loader = getKTX2Loader(gl);
     const gltfLoader = new GLTFLoader();
     
@@ -88,7 +90,7 @@ function loadGLTF(url: string, gl: THREE.WebGLRenderer): Promise<GLTF> {
  * 
  * Works with Suspense - will suspend while loading
  */
-export function useGLTFWithKTX2(url: string): GLTF {
+export function useGLTFWithKTX2(url: string): GLTFResult {
   const { gl } = useThree();
 
   // Check if model is in cache

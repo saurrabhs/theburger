@@ -71,7 +71,7 @@ export default function Footer() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-sm text-white/60"
               >
-                ✓ You're on the list.
+                ✓ You&apos;re on the list.
               </motion.p>
             ) : (
               <form onSubmit={handleSubmit} className="flex gap-3">
