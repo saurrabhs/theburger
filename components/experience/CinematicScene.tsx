@@ -35,7 +35,7 @@ const HERO_END        = 0.04;
 const OPEN_END        = 0.10;
 const STORY_START     = 0.12;
 const STORY_END       = 0.88;
-const ASSEMBLE_END    = 0.94;
+const ASSEMBLE_END    = 0.90;  // Reduced gap - assemble starts right after story
 const STORY_PER_ING   = (STORY_END - STORY_START) / KEYS.length; // ~0.095
 
 // Off-screen position when an ingredient is "hidden" during story
@@ -526,50 +526,120 @@ function DynamicLighting({ scrollProgress }: { scrollProgress: number }) {
     ? remapClamped(scrollProgress, ASSEMBLE_END, 1, 0, 1)
     : 0;
 
-  const isStory = scrollProgress >= STORY_START && scrollProgress < STORY_END;
-
-  // Detect if a bun is currently featured (they need special lighting due to their rotation)
-  const storyT       = isStory ? (scrollProgress - STORY_START) / (STORY_END - STORY_START) : 0;
-  const featuredIdx  = isStory ? Math.floor(clamp(storyT * KEYS.length, 0, KEYS.length - 1)) : -1;
-  const featuredKey  = featuredIdx >= 0 ? KEYS[featuredIdx] : null;
-  const isBunFeatured = featuredKey === "topBun" || featuredKey === "bottomBun";
-
   return (
     <>
-      {/* Ambient — always strong, removes all pitch-black shadows */}
-      <ambientLight intensity={0.5 + warmth * 0.3} color="#ffffff" />
+      {/* PREMIUM STUDIO LIGHTING SETUP */}
+      
+      {/* Ambient — soft fill, prevents pure blacks */}
+      <ambientLight intensity={0.6} color="#f5f5f5" />
 
-      {/* Main directional — key light from upper right */}
+      {/* KEY LIGHT — main directional from upper right, HDR-style */}
       <directionalLight
-        position={[5, 8, 5]} intensity={1.5}
-        color="#ffffff" castShadow
-        shadow-mapSize-width={2048} shadow-mapSize-height={2048}
+        position={[6, 10, 6]} 
+        intensity={2.2}
+        color="#ffffff" 
+        castShadow
+        shadow-mapSize-width={2048} 
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
       />
 
-      {/* Fill from upper left */}
-      <directionalLight position={[-5, 5, 3]} intensity={0.8} color="#ffffff" />
+      {/* FILL LIGHT — softer from left, reduces harsh shadows */}
+      <directionalLight 
+        position={[-6, 6, 4]} 
+        intensity={1.0} 
+        color="#fdf8f3" 
+      />
 
-      {/* FRONT DIRECT — straight from camera direction, lights the face we see */}
-      <directionalLight position={[0, 1.5, 10]} intensity={0.5} color="#ffffff" />
+      {/* FRONT SOFT LIGHT — straight from camera, illuminates what viewer sees */}
+      <directionalLight 
+        position={[0, 2, 12]} 
+        intensity={0.7} 
+        color="#ffffff" 
+      />
 
-      {/* BELOW — bottom bun is flipped, illuminate from below */}
-      <directionalLight position={[0, -8, 3]} intensity={0.3} color="#fff8f0" />
+      {/* BOTTOM FILL — lights the bottom bun and underside */}
+      <directionalLight 
+        position={[0, -10, 4]} 
+        intensity={0.4} 
+        color="#fff8f0" 
+      />
 
-      {/* Left/right wraps during story */}
-      <pointLight position={[-6, 1.5, 4]} intensity={0.4} color="#ffffff" />
-      <pointLight position={[ 6, 1.5, 4]} intensity={0.4} color="#ffffff" />
+      {/* RIM LIGHTS — Create premium edge highlights and depth */}
+      <pointLight 
+        position={[-8, 2, -4]} 
+        intensity={1.2} 
+        color="#FF6B35" 
+        distance={20}
+        decay={2}
+      />
+      <pointLight 
+        position={[8, 2, -4]} 
+        intensity={1.2} 
+        color="#FFB627" 
+        distance={20}
+        decay={2}
+      />
 
-      {/* Rim accent lights */}
-      <pointLight position={[-5, 3, -5]} intensity={0.6} color="#FF6B35" />
-      <pointLight position={[ 5, 3, -5]} intensity={0.6} color="#FFB627" />
+      {/* TOP RIM — Highlights the top of burger */}
+      <pointLight 
+        position={[0, 12, -2]} 
+        intensity={0.8} 
+        color="#ffffff" 
+        distance={15}
+        decay={2}
+      />
 
-      {/* CTA warm fill */}
+      {/* SIDE ACCENT LIGHTS — Wrap-around illumination during story */}
+      <pointLight 
+        position={[-7, 1.8, 5]} 
+        intensity={0.6} 
+        color="#fff5ed" 
+        distance={15}
+      />
+      <pointLight 
+        position={[7, 1.8, 5]} 
+        intensity={0.6} 
+        color="#fff5ed" 
+        distance={15}
+      />
+
+      {/* CTA WARM SPOTLIGHT — Premium golden glow for final section */}
       {warmth > 0 && (
-        <pointLight position={[0, 2, 6]} intensity={warmth * 1.5} color="#FFB627" />
+        <>
+          <pointLight 
+            position={[0, 3, 8]} 
+            intensity={warmth * 2.5} 
+            color="#FFB627"
+            distance={18}
+            decay={2}
+          />
+          <pointLight 
+            position={[0, 0, 10]} 
+            intensity={warmth * 1.5} 
+            color="#FF8559"
+            distance={15}
+            decay={2}
+          />
+        </>
       )}
 
-      <Environment preset="studio" />
-      <ContactShadows position={[0, -0.5, 0]} opacity={0.3} scale={8} blur={3} far={4} />
+      {/* HDRI Environment — Premium studio preset with enhanced exposure */}
+      <Environment 
+        preset="studio" 
+        environmentIntensity={0.6}
+      />
+      
+      {/* PREMIUM CONTACT SHADOWS — Soft, realistic ground shadows */}
+      <ContactShadows 
+        position={[0, -0.8, 0]} 
+        opacity={0.25} 
+        scale={10} 
+        blur={2.5} 
+        far={4}
+        resolution={512}
+        color="#000000"
+      />
     </>
   );
 }

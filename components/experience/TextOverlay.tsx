@@ -14,7 +14,7 @@ const HERO_END      = 0.04;
 const OPEN_END      = 0.10;
 const STORY_START   = 0.12;
 const STORY_END     = 0.88;
-const ASSEMBLE_END  = 0.94;
+const ASSEMBLE_END  = 0.90;  // Reduced gap - assemble starts right after story
 const STORY_PER     = (STORY_END - STORY_START) / KEYS.length;
 
 // Rich editorial copy per ingredient
@@ -127,10 +127,25 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
   const phase  = getPhase(scrollProgress);
   const active = getActiveIngredient(scrollProgress);
 
-  // Show text panel during story phase, when ingredient is "on stage" (t 0.15–0.85)
-  const showPanel = phase === "story" && active && active.t >= 0.12 && active.t <= 0.88;
+  // Show text panel during story phase - extended range to allow full slide-out
+  const showPanel = phase === "story" && active && active.t >= 0.12 && active.t <= 1.0;
   const copy = active ? INGREDIENT_COPY[active.key] : null;
   const cfg  = active ? BURGER_CONFIG[active.key]    : null;
+
+  // Calculate smooth fade in/out for ingredient panels based on active.t
+  let panelOpacity = 0;
+  let panelTranslateX = -40;
+  if (active && active.t >= 0.12) {
+    // Fade in from t=0.12 to t=0.30 (slower, more gradual)
+    const fadeIn = remapClamped(active.t, 0.12, 0.30, 0, 1);
+    // Fade out from t=0.70 to t=0.88 (slower, more gradual)
+    const fadeOut = 1 - remapClamped(active.t, 0.70, 0.88, 0, 1);
+    panelOpacity = Math.min(fadeIn, fadeOut);
+    // Slide in from left, then slide out to left
+    const slideIn = remapClamped(active.t, 0.12, 0.30, -40, 0);
+    const slideOut = remapClamped(active.t, 0.70, 0.88, 0, -40);
+    panelTranslateX = slideIn + slideOut;
+  }
 
   // CTA phase opacity
   const ctaOpacity = remapClamped(scrollProgress, ASSEMBLE_END, 1, 0, 1);
@@ -147,67 +162,149 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
     <div className="fixed inset-0 z-20 pointer-events-none" aria-hidden>
 
       {/* ── HERO text ──────────────────────────────────────────── */}
-      <AnimatePresence>
-        {phase === "hero" && (
-          <motion.div
-            key="hero-text"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute inset-0 flex items-center"
+      <div 
+        className="absolute inset-0 flex items-center transition-opacity duration-500"
+        style={{ 
+          opacity: remapClamped(scrollProgress, 0, HERO_END, 1, 0),
+          pointerEvents: scrollProgress < HERO_END ? 'auto' : 'none'
+        }}
+      >
+        {/* Left side */}
+        <div className="container-custom w-full grid grid-cols-[1fr_auto_1fr] lg:grid-cols-[1fr_420px_1fr] items-center">
+          <div 
+            className="flex flex-col gap-5 transition-all duration-500"
+            style={{ 
+              transform: `translateX(${remapClamped(scrollProgress, 0, HERO_END, 0, -40)}px)`
+            }}
           >
-            {/* Left side */}
-            <div className="container-custom w-full grid grid-cols-[1fr_auto_1fr] lg:grid-cols-[1fr_420px_1fr] items-center">
-              <div className="flex flex-col gap-5">
-                <p className="text-label">— Craft Burger Experience</p>
-                <h1 className="font-light leading-none" style={{ fontSize: "clamp(3rem, 7vw, 7rem)", letterSpacing: "-0.04em" }}>
-                  The Art
-                  <br />
-                  <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
-                    of Craft
-                  </em>
-                  <br />
-                  Perfection
-                </h1>
-                <p className="text-body max-w-xs">
-                  Eight meticulously sourced ingredients.<br />One unforgettable composition.
-                </p>
-                <div className="flex gap-3 pointer-events-auto mt-2">
-                  <button
-                    onClick={() => window.scrollBy({ top: window.innerHeight * 0.5, behavior: "smooth" })}
-                    className="btn-primary"
-                  >
-                    Begin the Story
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+            <p style={{ fontSize: "10.5px", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
+              CRAFT BURGER EXPERIENCE
+            </p>
+            <h1 className="font-light leading-none" style={{ fontSize: "clamp(45px, 6vw, 78px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}>
+              The Art
+              <br />
+              <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
+                of Craft
+              </em>
+              <br />
+              Perfection
+            </h1>
+            <p style={{ fontSize: "15px", lineHeight: "1.65", color: "rgba(255,255,255,0.42)", maxWidth: "340px", fontWeight: 300 }}>
+              Eight meticulously sourced ingredients.<br />One unforgettable composition.
+            </p>
+            <div className="flex gap-3 pointer-events-auto mt-2">
+              <button
+                onClick={() => window.scrollBy({ top: window.innerHeight * 0.5, behavior: "smooth" })}
+                className="btn-primary"
+                style={{ fontSize: "11.5px", padding: "11px 24px" }}
+              >
+                Begin the Story
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Center — empty for burger */}
+          <div />
+
+          {/* Right side - Premium quality indicators */}
+          <div 
+            className="flex flex-col items-end gap-12 text-right transition-all duration-500"
+            style={{ 
+              transform: `translateX(${remapClamped(scrollProgress, 0, HERO_END, 0, 40)}px)`
+            }}
+          >
+            {[
+              { 
+                icon: "✦", 
+                value: "Fresh Daily",
+                subtext: "Never frozen"
+              },
+              { 
+                icon: "◆", 
+                value: "42g Protein",
+                subtext: "Power packed"
+              },
+              { 
+                icon: "★", 
+                value: "Hand Crafted",
+                subtext: "With passion"
+              },
+            ].map((item, i) => (
+              <div key={i} className="group">
+                <div className="flex items-baseline justify-end gap-2 mb-1">
+                  <span className="text-orange-500/40 text-sm">{item.icon}</span>
+                  <span style={{ fontSize: "20px", fontWeight: 300, letterSpacing: "-0.02em" }}>{item.value}</span>
+                </div>
+                <div style={{ 
+                  fontSize: "9.5px", 
+                  letterSpacing: "0.18em", 
+                  textTransform: "uppercase", 
+                  color: "rgba(255,255,255,0.2)",
+                  fontWeight: 300
+                }}>
+                  {item.subtext}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              {/* Center — empty for burger */}
-              <div />
+      {/* ── OPENING PHASE TEXT ───────────────────────────────────────── */}
+      {(phase === "opening" || (phase === "pause" && scrollProgress < STORY_START)) && (
+        <div
+          className="absolute left-10 lg:left-20 top-1/2 -translate-y-1/2 transition-all duration-700"
+          style={{ 
+            opacity: remapClamped(scrollProgress, HERO_END, HERO_END + 0.02, 0, 1) * 
+                     (1 - remapClamped(scrollProgress, OPEN_END - 0.02, OPEN_END + 0.02, 0, 1)),
+            transform: `translateY(-50%) translateX(${
+              remapClamped(scrollProgress, HERO_END, HERO_END + 0.02, -30, 0) + 
+              remapClamped(scrollProgress, OPEN_END - 0.02, OPEN_END + 0.02, 0, -30)
+            }px)`
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <p style={{ 
+              fontSize: "10px", 
+              letterSpacing: "0.22em", 
+              textTransform: "uppercase", 
+              color: "rgba(255,255,255,0.3)",
+              fontWeight: 500
+            }}>
+              — Opening
+            </p>
+            <h2 style={{ 
+              fontSize: "clamp(32px, 4.5vw, 56px)", 
+              fontWeight: 300, 
+              lineHeight: "1.1",
+              letterSpacing: "-0.03em"
+            }}>
+              Revealing
+              <br />
+              <span style={{ 
+                fontFamily: "var(--font-playfair, 'Georgia', serif)", 
+                fontStyle: "italic", 
+                color: "var(--orange)" 
+              }}>
+                the layers
+              </span>
+            </h2>
+            <p style={{ 
+              fontSize: "13px", 
+              lineHeight: "1.6", 
+              color: "rgba(255,255,255,0.38)",
+              maxWidth: "260px"
+            }}>
+              Watch as each ingredient finds its place in perfect harmony.
+            </p>
+          </div>
+        </div>
+      )}
 
-              {/* Right side stats */}
-              <div className="flex flex-col items-end gap-8 text-right">
-                {[
-                  { val: "8",    label: "Premium layers" },
-                  { val: "100%", label: "Natural ingredients" },
-                  { val: "2024", label: "Perfected" },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <div className="text-3xl font-light tracking-tight">{s.val}</div>
-                    <div className="text-label mt-1">{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── OPENING HINT ───────────────────────────────────────── */}
+      {/* ── OPENING HINT (bottom) ───────────────────────────────────────── */}
       <div
         className="absolute bottom-10 left-1/2 -translate-x-1/2 text-center transition-opacity duration-300"
         style={{ opacity: openingOpacity }}
@@ -216,88 +313,87 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
       </div>
 
       {/* ── INGREDIENT STORY PANEL ─────────────────────────────── */}
-      <AnimatePresence mode="wait">
-        {showPanel && copy && cfg && (
-          <motion.div
-            key={active!.key}
-            variants={panelVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="absolute left-0 pointer-events-none flex flex-col"
+      {showPanel && copy && cfg && (
+        <div
+          key={active!.key}
+          className="absolute left-0 pointer-events-none flex flex-col transition-all duration-500"
+          style={{
+            top: "50%",
+            transform: `translateY(-50%) translateX(${panelTranslateX}px)`,
+            opacity: panelOpacity,
+            maxWidth: "min(360px, 36vw)",
+            paddingLeft: "clamp(2rem, 4vw, 4rem)",
+            paddingRight: "1rem",
+          }}
+        >
+          {/* Label */}
+          <p className="text-label mb-2" style={{ color: cfg.color }}>
+            {copy.label}
+          </p>
+
+          {/* Headline — smaller to save vertical space */}
+          <h2
+            className="font-light leading-none mb-2"
+            style={{ fontSize: "clamp(2rem, 3.5vw, 4rem)", letterSpacing: "-0.03em" }}
+          >
+            {copy.headline}
+          </h2>
+
+          {/* Accent line */}
+          <div
+            className="mb-3 origin-left transition-all duration-500"
+            style={{ 
+              background: cfg.color, 
+              width: 36, 
+              height: 1,
+              transform: `scaleX(${panelOpacity})`
+            }}
+          />
+
+          {/* Sub name */}
+          <p
+            className="font-medium uppercase mb-2"
+            style={{ color: cfg.color, fontSize: "0.65rem", letterSpacing: "0.14em" }}
+          >
+            {copy.sub}
+          </p>
+
+          {/* Description — tighter line height */}
+          <p
+            className="mb-3"
             style={{
-              top: "50%",
-              transform: "translateY(-50%)",
-              maxWidth: "min(360px, 36vw)",
-              paddingLeft: "clamp(2rem, 4vw, 4rem)",
-              paddingRight: "1rem",
+              fontSize: "clamp(0.72rem, 0.9vw, 0.88rem)",
+              lineHeight: 1.55,
+              color: "rgba(255,255,255,0.48)",
             }}
           >
-            {/* Label */}
-            <p className="text-label mb-2" style={{ color: cfg.color }}>
-              {copy.label}
-            </p>
+            {copy.detail}
+          </p>
 
-            {/* Headline — smaller to save vertical space */}
-            <h2
-              className="font-light leading-none mb-2"
-              style={{ fontSize: "clamp(2rem, 3.5vw, 4rem)", letterSpacing: "-0.03em" }}
-            >
-              {copy.headline}
-            </h2>
-
-            {/* Accent line */}
-            <motion.div
-              variants={lineVariants}
-              className="mb-3 origin-left"
-              style={{ background: cfg.color, width: 36, height: 1 }}
-            />
-
-            {/* Sub name */}
-            <p
-              className="font-medium uppercase mb-2"
-              style={{ color: cfg.color, fontSize: "0.65rem", letterSpacing: "0.14em" }}
-            >
-              {copy.sub}
-            </p>
-
-            {/* Description — tighter line height */}
-            <p
-              className="mb-3"
+          {/* Stat badge */}
+          {copy.stat && (
+            <div
+              className="inline-flex items-center gap-2 self-start rounded-full"
               style={{
-                fontSize: "clamp(0.72rem, 0.9vw, 0.88rem)",
-                lineHeight: 1.55,
-                color: "rgba(255,255,255,0.48)",
+                background: `${cfg.color}12`,
+                border: `1px solid ${cfg.color}25`,
+                padding: "5px 12px",
               }}
             >
-              {copy.detail}
-            </p>
-
-            {/* Stat badge */}
-            {copy.stat && (
               <div
-                className="inline-flex items-center gap-2 self-start rounded-full"
-                style={{
-                  background: `${cfg.color}12`,
-                  border: `1px solid ${cfg.color}25`,
-                  padding: "5px 12px",
-                }}
+                className="rounded-full flex-shrink-0"
+                style={{ background: cfg.color, width: 5, height: 5 }}
+              />
+              <span
+                className="font-medium tracking-wide"
+                style={{ color: cfg.color, fontSize: "0.65rem" }}
               >
-                <div
-                  className="rounded-full flex-shrink-0"
-                  style={{ background: cfg.color, width: 5, height: 5 }}
-                />
-                <span
-                  className="font-medium tracking-wide"
-                  style={{ color: cfg.color, fontSize: "0.65rem" }}
-                >
-                  {copy.stat}
-                </span>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {copy.stat}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ingredient counter — right side during story */}
       <AnimatePresence>
@@ -368,42 +464,42 @@ export default function TextOverlay({ scrollProgress }: TextOverlayProps) {
       >
         {/* Left side - Main CTA */}
         <div className="absolute left-10 lg:left-16 top-1/2 -translate-y-1/2 max-w-md">
-          <p className="text-label mb-6">— The Perfect Burger</p>
-          <h2 className="font-light leading-none mb-4"
-            style={{ fontSize: "clamp(2.5rem, 5vw, 5.5rem)", letterSpacing: "-0.03em" }}>
+          <p className="text-label mb-5">— The Perfect Burger</p>
+          <h2 className="font-light leading-none mb-3"
+            style={{ fontSize: "clamp(2.2rem, 4.5vw, 4.8rem)", letterSpacing: "-0.03em" }}>
             Crafted to
             <br />
             <em style={{ fontFamily: "var(--font-playfair, 'Georgia', serif)", fontStyle: "italic", color: "var(--orange)" }}>
               perfection.
             </em>
           </h2>
-          <p className="text-body max-w-xs mb-10">
+          <p className="max-w-xs mb-8" style={{ fontSize: "14px", lineHeight: "1.6", color: "rgba(255,255,255,0.45)" }}>
             Every layer considered. Every ingredient sourced with intention.
             One unforgettable experience.
           </p>
           <div className="flex gap-4">
-            <button className="btn-primary">
+            <button className="btn-primary" style={{ fontSize: "13px", padding: "12px 26px" }}>
               Order Now
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button className="btn-ghost">Find a Location</button>
+            <button className="btn-ghost" style={{ fontSize: "13px", padding: "12px 26px" }}>Find a Location</button>
           </div>
         </div>
 
         {/* Right side - Stats/Quality indicators */}
-        <div className="absolute right-10 lg:right-16 top-1/2 -translate-y-1/2 flex flex-col items-end gap-8 text-right">
+        <div className="absolute right-10 lg:right-16 top-1/2 -translate-y-1/2 flex flex-col items-end gap-7 text-right">
           {[
             { val: "8", label: "Premium Ingredients", detail: "Hand-selected daily" },
             { val: "100%", label: "Natural", detail: "No artificial flavors" },
             { val: "★★★★★", label: "Quality", detail: "Michelin-rated" },
           ].map((stat) => (
             <div key={stat.label}>
-              <div className="text-4xl font-light tracking-tighter mb-2" style={{ color: "var(--orange)" }}>
+              <div className="font-light tracking-tighter mb-2" style={{ fontSize: "2rem", color: "var(--orange)" }}>
                 {stat.val}
               </div>
-              <div className="text-lg font-medium mb-1">{stat.label}</div>
+              <div className="font-medium mb-1" style={{ fontSize: "16px" }}>{stat.label}</div>
               <div className="text-label">{stat.detail}</div>
             </div>
           ))}

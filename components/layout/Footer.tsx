@@ -26,7 +26,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative bg-dark-900 border-t border-white/[0.04] section-padding">
+    <footer className="relative bg-dark-900 border-t border-white/[0.04]" style={{ paddingTop: "4rem", paddingBottom: 0 }}>
 
       {/* Top row */}
       <div className="container-custom">
@@ -88,11 +88,32 @@ export default function Footer() {
                 </button>
               </form>
             )}
+            
+            {/* Support - Buy Me a Coffee */}
+            <div className="flex items-center gap-4 mt-6 pt-6 border-t border-white/[0.04]">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-white/40">
+                  Enjoyed this? Support us.
+                </p>
+                <p className="text-xs text-white/20">Made with passion</p>
+              </div>
+              
+              <motion.a
+                href="https://buymeacoffee.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-orange-500/90 to-orange-600/90 rounded-full text-xs font-semibold text-white transition-all duration-300 hover:shadow-[0_20px_60px_rgba(255,107,53,0.3)] shrink-0"
+              >
+                ☕ Buy Me a Coffee
+              </motion.a>
+            </div>
           </div>
         </div>
 
         {/* Bottom row */}
-        <div className="border-t border-white/[0.04] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/[0.04] pt-8 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-label">© 2026 The Burger. All rights reserved.</p>
 
           <div className="flex items-center gap-6">
